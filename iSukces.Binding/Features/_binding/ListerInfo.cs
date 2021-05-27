@@ -36,9 +36,10 @@ namespace iSukces.Binding
             _currentCulture         = currentCulture ?? CultureInfo.CurrentCulture;
         }
 
-        private object Convert(object value)
+        private bool Convert(ref object value)
         {
-            if (_converter is null) return value;
+            if (_converter is null) 
+                return false;
             try
             {
                 value = _converter.Convert(value, _typeAcceptedByListener, _converterParameter, _currentCulture);
@@ -48,7 +49,7 @@ namespace iSukces.Binding
                 value = BindingSpecial.Invalid;
             }
 
-            return value;
+            return true;
         }
 
         public object ConvertBack(object value)
@@ -67,10 +68,14 @@ namespace iSukces.Binding
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Invoke(object value, ListenerDelegateKind kind)
+        public void Invoke(IValueInfo info)
         {
-            value = Convert(value);
-            _action(value, kind);
+            var value    = info.Value;
+            if (Convert(ref value))
+            {
+                info = PrvValueInfo.Make(info, value);
+            }
+            _action(info);
         }
 
         public static Type DoesntMatter = null;

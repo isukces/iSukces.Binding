@@ -12,32 +12,29 @@ namespace iSukces.Binding.Test
         [InlineData("dispose binding manager")]
         public void T01_Should_bind_change_and_dispose(string testNumber)
         {
-            var bm  = new BindingManager();
-            var log = new StringBuilder();
+            var testing = new Testing();
 
-            var data = new SimpleNpc(log, "Obj");
+            var data = new SimpleNpc(testing.log, "Obj");
             data.Title = "initial value";
             Assert.False(data.HasPropertyChangedSubscribers);
 
-            var binding = bm.From(data);
+            var binding = testing.bm.From(data);
             Assert.False(data.HasPropertyChangedSubscribers);
             binding.WithPath(nameof(data.Title));
             Assert.False(data.HasPropertyChangedSubscribers);
-            int changessCount = 0;
-            var listener = binding.CreateListener((q, kind) =>
+            var listener = binding.CreateListener(info =>
             {
-                log.AppendLine($"Got value {kind}: '{q}'");
-                changessCount++;
+                testing.Listen(info);
             });
-            Assert.Equal(1, changessCount);
+            Assert.Equal(1, testing.changessCount);
             Assert.True(data.HasPropertyChangedSubscribers);
             data.Title = "new Value";
-            Assert.Equal(2, changessCount);
+            Assert.Equal(2, testing.changessCount);
 
             if (testNumber == "dispose listener")
                 listener.Dispose();
             if (testNumber == "dispose binding manager")
-                bm.Dispose();
+                testing.bm.Dispose();
 
             Assert.False(data.HasPropertyChangedSubscribers);
 
@@ -48,7 +45,7 @@ Got value ValueChanged: 'new Value'
 Got value EndBinding: 'Unbound'
 [Obj] Unubscribe PropertyChanged
 ";
-            var log1 = log.ToString().Trim();
+            var log1 = testing.GetLog();
             Assert.Equal(expected.Trim(), log1);
         }
 
@@ -56,91 +53,80 @@ Got value EndBinding: 'Unbound'
         [Fact]
         public void T02_Should_update_source()
         {
-            var bm  = new BindingManager();
-            var log = new StringBuilder();
+            var testing = new Testing();
 
-            var data    = new SimpleNpc(log, "Obj") {IntNumber = 99};
-            var binding = bm.From(data, q => q.IntNumber);
+            var data    = new SimpleNpc(testing.log, "Obj") {IntNumber = 99};
+            var binding = testing.bm.From(data, q => q.IntNumber);
             Assert.False(data.HasPropertyChangedSubscribers);
 
-            var changessCount = 0;
-            var updater = binding.CreateTwoWayBinding<int>((q, kind) =>
+            var updater = binding.CreateTwoWayBinding<int>(info =>
             {
-                if (q is not BindingSpecial)
+                if (info.Value is not BindingSpecial)
                 {
-                    Assert.True(q is int);
+                    Assert.True(info.Value is int);
                 }
 
-                log.AppendLine($"Got value {kind}: '{q}'");
-                changessCount++;
+                testing.Listen(info);
             });
 
             data.IntNumber = 13;
             updater.UpdateSource(27);
             Assert.Equal(27, data.IntNumber);
 
-            Assert.Equal(3, changessCount);
+            Assert.Equal(3, testing.changessCount);
             const string expected = @"
 [Obj] Subscribe PropertyChanged
 Got value StartBinding: '99'
 Got value ValueChanged: '13'
 Got value UpdateSource: '27'
 ";
-            var log1 = log.ToString().Trim();
+            var log1 = testing.GetLog();
             Assert.Equal(expected.Trim(), log1);
         }
 
         [Fact]
         public void T03_Should_not_update_invalid_value()
         {
-            var bm  = new BindingManager();
-            var log = new StringBuilder();
+            var testing = new Testing();
 
-            var data    = new SimpleNpc(log, "Obj") {IntNumber = 99};
-            var binding = bm.From(data, q => q.IntNumber);
+            var data    = new SimpleNpc(testing.log, "Obj") {IntNumber = 99};
+            var binding = testing.bm.From(data, q => q.IntNumber);
             Assert.False(data.HasPropertyChangedSubscribers);
 
-            var changessCount = 0;
-            var updater = binding.CreateTwoWayBinding<int>((q, kind) =>
+            var updater = binding.CreateTwoWayBinding<int>(info =>
             {
-                log.AppendLine($"Got value {kind}: '{q}'");
-                changessCount++;
+                testing.Listen(info);
             });
 
             data.IntNumber = 13;
             var updateResult = updater.UpdateSource("27");
             Assert.Equal(UpdateSourceResult.InvalidValue, updateResult);
-            Assert.Equal(2, changessCount);
+            Assert.Equal(2, testing.changessCount);
             const string expected = @"
 [Obj] Subscribe PropertyChanged
 Got value StartBinding: '99'
 Got value ValueChanged: '13'
 ";
-            var log1 = log.ToString().Trim();
+            var log1 = testing.GetLog();
             Assert.Equal(expected.Trim(), log1);
         }
 
         [Fact]
         public void T04_Should_update_value_with_conversion()
         {
-            var bm  = new BindingManager();
-            var log = new StringBuilder();
+            var testing = new Testing();
 
-            var data    = new SimpleNpc(log, "Obj") {IntNumber = 99};
-            var binding = bm.From(data, q => q.IntNumber);
+            var data    = new SimpleNpc(testing.log, "Obj") {IntNumber = 99};
+            var binding = testing.bm.From(data, q => q.IntNumber);
             binding.Converter = NumberValueConverter.Instance;
             Assert.False(data.HasPropertyChangedSubscribers);
 
-            var changessCount = 0;
-            var updater = binding.CreateTwoWayBinding<int, string>((q, kind) =>
+            var updater = binding.CreateTwoWayBinding<int, string>(info =>
             {
-                if (q is not BindingSpecial)
-                {
-                    Assert.True(q is null or string);
-                }
+                if (info.Value is not BindingSpecial) 
+                    Assert.True(info.Value is null or string);
 
-                log.AppendLine($"Got value {kind}: '{q}'");
-                changessCount++;
+                testing.Listen(info);
             });
 
             data.IntNumber = 13;
@@ -148,14 +134,14 @@ Got value ValueChanged: '13'
             Assert.Equal(UpdateSourceResult.Ok, updateResult);
             Assert.Equal(27, data.IntNumber);
 
-            Assert.Equal(3, changessCount);
+            Assert.Equal(3, testing.changessCount);
             const string expected = @"
 [Obj] Subscribe PropertyChanged
 Got value StartBinding: '99'
 Got value ValueChanged: '13'
 Got value UpdateSource: '27'
 ";
-            var log1 = log.ToString().Trim();
+            var log1 = testing.GetLog();
             Assert.Equal(expected.Trim(), log1);
         }
 
@@ -168,26 +154,21 @@ Got value UpdateSource: '27'
         public void T05_Should_update_value_with_conversion_and_culture(string culture, string expected1,
             string expected2)
         {
-            var bm  = new BindingManager();
-            var log = new StringBuilder();
+            var testing = new Testing();
 
-            var data    = new SimpleNpc(log, "Obj") {DecimalNumber = 99.45m};
-            var binding = bm.From(data, q => q.DecimalNumber);
+            var data    = new SimpleNpc(testing.log, "Obj") {DecimalNumber = 99.45m};
+            var binding = testing.bm.From(data, q => q.DecimalNumber);
             binding.Converter          = NumberValueConverter.Instance;
             binding.CultureInfo        = CultureInfo.GetCultureInfo(culture);
             binding.ConverterParameter = "c2";
             Assert.False(data.HasPropertyChangedSubscribers);
 
-            var changessCount = 0;
-            var updater = binding.CreateTwoWayBinding<decimal, string>((q, kind) =>
+            var updater = binding.CreateTwoWayBinding<decimal, string>(info =>
             {
-                if (q is not BindingSpecial)
-                {
-                    Assert.True(q is null or string);
-                }
+                if (info.Value is not BindingSpecial) 
+                    Assert.True(info.Value is null or string);
 
-                log.AppendLine($"Got value {kind}: '{q}'");
-                changessCount++;
+                testing.Listen(info);
             });
 
             var stringNumber = 27.44.ToString(binding.CultureInfo);
@@ -195,53 +176,68 @@ Got value UpdateSource: '27'
             Assert.Equal(UpdateSourceResult.Ok, updateResult);
             Assert.Equal(27.44m, data.DecimalNumber);
 
-            Assert.Equal(2, changessCount);
+            Assert.Equal(2, testing.changessCount);
             string expected = @$"
 [Obj] Subscribe PropertyChanged
 Got value StartBinding: '{expected1}'
 Got value UpdateSource: '{expected2}'
 ";
-            var log1 = log.ToString().Trim();
+            var log1 = testing.GetLog();
             Assert.Equal(expected.Trim(), log1);
         }
-        
-        
+
         [Fact]
         public void T06_Should_catch_update_source_exception()
         {
-            var bm  = new BindingManager();
-            var log = new StringBuilder();
+            var testing = new Testing();
 
-            var data    = new SimpleNpc(log, "Obj") {DecimalNumber = 99.45m};
-            var binding = bm.From(data, q => q.DecimalNumber);
+            var data    = new SimpleNpc(testing.log, "Obj") {DecimalNumber = 99.45m};
+            var binding = testing.bm.From(data, q => q.DecimalNumber);
             Assert.False(data.HasPropertyChangedSubscribers);
 
-            var changessCount = 0;
-            var updater = binding.CreateTwoWayBinding<decimal, string>((q, kind) =>
+            var updater = binding.CreateTwoWayBinding<decimal, string>(info =>
             {
-                if (q is not BindingSpecial)
+                if (info.Value is not BindingSpecial)
                 {
-                    Assert.True(q is decimal);
+                    Assert.True(info.Value is decimal);
                 }
 
-                log.AppendLine($"Got value {kind}: '{q}'");
-                changessCount++;
+                testing.Listen(info);
             });
 
             var updateResult = updater.UpdateSource(-1.345m);
             Assert.NotNull(updateResult.Exception);
             Assert.Equal(99.45m, data.DecimalNumber);
-            Assert.Equal(2, changessCount);
-            bm.Dispose();
+            Assert.Equal(2, testing.changessCount);
+            testing.bm.Dispose();
             const string expected = @"
 [Obj] Subscribe PropertyChanged
 Got value StartBinding: '99,45'
-Got value UpdateSource: 'Invalid'
-Got value EndBinding: 'Unbound'
+Got value UpdateSource: 'Invalid', last valid '99,45'
+Got value EndBinding: 'Unbound', last valid '99,45'
 [Obj] Unubscribe PropertyChanged
 ";
-            var log1 = log.ToString().Trim();
+            var log1 = testing.GetLog();
             Assert.Equal(expected.Trim(), log1);
+        }
+
+
+        class Testing
+        {
+            public string GetLog() { return log.ToString().Trim(); }
+
+            public void Listen(IValueInfo info)
+            {
+                if (info.Value is BindingSpecial)
+                        log.AppendLine($"Got value {info.Kind}: '{info.Value}', last valid '{info.LastValidValue}'");
+                else
+                    log.AppendLine($"Got value {info.Kind}: '{info.Value}'");
+                changessCount++;
+            }
+
+            public readonly BindingManager bm = new BindingManager();
+            public readonly StringBuilder log = new StringBuilder();
+            public int changessCount;
         }
     }
 }

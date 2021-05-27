@@ -1,6 +1,8 @@
+using JetBrains.Annotations;
+
 namespace iSukces.Binding
 {
-    public delegate void ListenerDelegate(object value, ListenerDelegateKind kind);
+    public delegate void ListenerDelegate([NotNull] IValueInfo info);
 
     public enum ListenerDelegateKind
     {

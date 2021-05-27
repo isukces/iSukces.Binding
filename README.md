@@ -19,7 +19,7 @@ var bm  = new BindingManager();
 
 IDisposable binding = bm.From(this)
     .WithPath("ViewModel.Title")
-    .CreateListener((value, kind) =>
+    .CreateListener(info =>
       {
          // see table below
           ...              

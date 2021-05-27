@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Globalization;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 
@@ -24,19 +23,29 @@ namespace iSukces.Binding
                 return null;
             _listeners.Add(listener);
 
-            listener.Invoke(_source, ListenerDelegateKind.StartBinding);
+            var infoStart = Create1(ListenerDelegateKind.StartBinding);
+            listener.Invoke(infoStart);
 
             return new DisposableAction(() =>
             {
                 if (!_listeners.Contains(listener))
                     return;
                 _listeners.Remove(listener);
-                listener.Invoke(BindingSpecial.Unbound, ListenerDelegateKind.EndBinding);
+                var infoEnd = Create1(ListenerDelegateKind.EndBinding);
+                listener.Invoke(infoEnd);
                 if (_listeners.Count == 0 && _properties.Count == 0)
                 {
                     Dispose();
                 }
             });
+        }
+
+        private PrvValueInfo Create1(ListenerDelegateKind kind)
+        {
+            if (kind == ListenerDelegateKind.EndBinding)
+                return new PrvValueInfo(kind, BindingSpecial.Unbound, _lastValidSource);
+            var infoStart = new PrvValueInfo(kind, _source, _lastValidSource);
+            return infoStart;
         }
 
         public BindingValueWrapper CreateAccessor(string path)
@@ -78,8 +87,9 @@ namespace iSukces.Binding
 
             if (_listeners.Count > 0)
             {
+                var info = Create1(ListenerDelegateKind.EndBinding);
                 foreach (var i in _listeners)
-                    i.Invoke(BindingSpecial.Unbound, ListenerDelegateKind.EndBinding);
+                    i.Invoke(info);
                 _listeners.Clear();
             }
 
@@ -103,13 +113,13 @@ namespace iSukces.Binding
 
         private object GetPropertyValue(string propertyName)
         {
-            if (_source is BindingSpecial s)
+            if (_source is BindingSpecial special)
             {
-                switch (s.Kind)
+                switch (special.Kind)
                 {
                     case BindingSpecialKind.NotSet:
                     case BindingSpecialKind.Unbound:
-                        return s;
+                        return special;
                     default: throw new ArgumentOutOfRangeException();
                 }
             }
@@ -182,7 +192,6 @@ namespace iSukces.Binding
                 _flags |= ValuePropagationFlags.UpdateSource;
                 try
                 {
-                    
                     if (_owner is null)
                     {
                         Source = value;
@@ -194,6 +203,7 @@ namespace iSukces.Binding
                     {
                         Source = BindingSpecial.Invalid;
                     }
+
                     return ownerResult;
                 }
                 finally
@@ -212,7 +222,7 @@ namespace iSukces.Binding
             ThrowIfDisposed();
 
             value = listerInfo.ConvertBack(value);
-            
+
             if (value is BindingSpecial special)
             {
                 return UpdateSourceResult.Special;
@@ -223,12 +233,11 @@ namespace iSukces.Binding
             {
                 var result = _accessor.Write(propertyName, value);
                 return result;
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 return UpdateSourceResult.FromException(e, value);
             }
-
-            
         }
 
         public object Source
@@ -242,6 +251,8 @@ namespace iSukces.Binding
                 if (_isListening && value is INotifyPropertyChanged oldNpc)
                     oldNpc.PropertyChanged -= SourcePropertyChanged;
                 _source = value;
+                if (value is not BindingSpecial)
+                    _lastValidSource = _source;
                 if (_isListening && value is INotifyPropertyChanged newNpc)
                     newNpc.PropertyChanged += SourcePropertyChanged;
 
@@ -257,11 +268,12 @@ namespace iSukces.Binding
 
                 for (var index = 0; index < _listeners.Count; index++)
                 {
-                    var listener             = _listeners[index];
-                    var kind = ListenerDelegateKind.ValueChanged;
+                    var listener = _listeners[index];
+                    var kind     = ListenerDelegateKind.ValueChanged;
                     if ((_flags & ValuePropagationFlags.UpdateSource) != 0)
                         kind = ListenerDelegateKind.UpdateSource;
-                    listener.Invoke(_source, kind);
+                    var info = Create1(kind);
+                    listener.Invoke(info);
                 }
             }
         }
@@ -271,12 +283,13 @@ namespace iSukces.Binding
         private readonly List<ListerInfo> _listeners = new();
         private readonly Dictionary<string, BindingValueWrapper> _properties = new();
         private IPropertyAccessor _accessor;
+
+        private ValuePropagationFlags _flags;
         private bool _isListening;
+        private object _lastValidSource;
         private BindingValueWrapper _owner;
         private string _ownerPropertyName;
         private object _source;
-
-        private ValuePropagationFlags _flags;
     }
 
 
