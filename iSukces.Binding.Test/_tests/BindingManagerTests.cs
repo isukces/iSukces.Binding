@@ -1,4 +1,6 @@
-﻿using iSukces.Binding.Test.Data;
+﻿using System.Text;
+using iSukces.Binding.Test.Data;
+using Xunit;
 
 namespace iSukces.Binding.Test
 {

@@ -1,4 +1,6 @@
-﻿namespace iSukces.Binding.Test.Data
+﻿using System.Text;
+
+namespace iSukces.Binding.Test.Data
 {
     class Wrap1Npc : NpcBase
     {

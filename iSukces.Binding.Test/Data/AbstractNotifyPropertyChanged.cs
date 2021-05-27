@@ -1,4 +1,8 @@
-﻿namespace iSukces.Binding.Test.Data
+﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
+
+namespace iSukces.Binding.Test.Data
 {
     abstract class AbstractNotifyPropertyChanged : INotifyPropertyChanged
     {

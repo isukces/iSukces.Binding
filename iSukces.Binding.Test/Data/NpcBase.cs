@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace iSukces.Binding.Test.Data
 {
     class NpcBase : AbstractNotifyPropertyChanged
