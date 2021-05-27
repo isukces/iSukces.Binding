@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <LangVersion>9</LangVersion>
+        <TargetFrameworks>net47;net48;netcoreapp3.1</TargetFrameworks>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Title>iSukces.Binding</Title>
+        <Authors>Internet Sukces Piotr Stęclik</Authors>
+        <Copyright>Copyright © Internet Sukces Piotr Stęclik 2021</Copyright>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="JetBrains.Annotations" Version="2021.1.0" />
+    </ItemGroup>
+
+</Project>
