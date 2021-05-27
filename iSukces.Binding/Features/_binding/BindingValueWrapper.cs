@@ -204,11 +204,9 @@ namespace iSukces.Binding
         private UpdateSourceResult UpdateSource(string propertyName, object value, ListerInfo listerInfo)
         {
             ThrowIfDisposed();
-            var converter = listerInfo.Converter;
-            if (converter is not null)
-            {
-                value = converter.ConvertBack(value, listerInfo.ExpectedType, null, CultureInfo.CurrentCulture);
-            }
+
+            value = listerInfo.ConvertBack(value);
+            
             if (value is BindingSpecial special)
             {
                 return UpdateSourceResult.Special;

@@ -83,7 +83,7 @@ Got value EndBinding: 'Unbound'
 [Obj] Subscribe PropertyChanged
 Got value StartBinding: '99'
 Got value ValueChanged: '13'
-Got value ValueChanged: '27'
+Got value UpdateSource: '27'
 ";
             var log1 = log.ToString().Trim();
             Assert.Equal(expected.Trim(), log1);
@@ -131,8 +131,12 @@ Got value ValueChanged: '13'
             Assert.False(data.HasPropertyChangedSubscribers);
 
             var changessCount = 0;
-            var updater = binding.CreateTwoWayBinding<int>((q, kind) =>
+            var updater = binding.CreateTwoWayBinding<int, string>((q, kind) =>
             {
+                if (q is not BindingSpecial)
+                {
+                    Assert.True(q is null or string);
+                }
                 log.AppendLine($"Got value {kind}: '{q}'");
                 changessCount++;
             });

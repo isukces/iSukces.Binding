@@ -10,22 +10,27 @@ namespace iSukces.Binding
 
         public IDisposable CreateListener(ListenerDelegate listener)
         {
-            return CreateListener(listener, typeof(object));
+            return CreateListener(listener, ListerInfo.DoesntMatter, ListerInfo.DoesntMatter);
         }
 
-        public IDisposable CreateListener(ListenerDelegate listener, Type expectedType)
+        public IDisposable CreateListener(ListenerDelegate listener, Type typeAcceptedByListener)
         {
-            var disposables = CreateListener(listener, expectedType, null);
+            return CreateListener(listener, typeAcceptedByListener, ListerInfo.DoesntMatter);
+        }
+
+        public IDisposable CreateListener(ListenerDelegate listener, Type typeAcceptedByListener, Type sourceType)
+        {
+            var disposables = CreateListener(listener, typeAcceptedByListener, sourceType, null);
             return disposables.MainDisposing;
         }
 
-
-        private DisposableHolder CreateListener(ListenerDelegate listener, Type expectedType,
+        private DisposableHolder CreateListener(ListenerDelegate listener,
+            Type typeAcceptedByListener, Type sourceType,
             Func<Action, ListerInfo, BindingValueWrapper, IDisposable> factory)
         {
             var disposables = new DisposableHolder();
-            var wrapper     = _wrapper.CreateAccessor(Path);
-            var info        = new ListerInfo(listener, expectedType, Converter);
+            var wrapper = _wrapper.CreateAccessor(Path);
+            var info = new ListerInfo(listener, typeAcceptedByListener, sourceType, Converter, CnverterParameter);
             disposables.RemoveFromListerer = wrapper.AddListenerAction(info);
 
             void DisposableAction()
@@ -44,18 +49,24 @@ namespace iSukces.Binding
             return disposables;
         }
 
-        public ITwoWayBinding CreateTwoWayBinding<T>(ListenerDelegate listener)
+        public ITwoWayBinding CreateTwoWayBinding<TSource>(ListenerDelegate listener, Type typeAcceptedByListener = null)
         {
-            return CreateTwoWayBinding(listener, typeof(T));
+            return CreateTwoWayBinding(listener, typeAcceptedByListener, typeof(TSource));
+        }
+        
+        public ITwoWayBinding CreateTwoWayBinding<TSource, TListener>(ListenerDelegate listener)
+        {
+            return CreateTwoWayBinding(listener, typeof(TListener), typeof(TSource));
         }
 
-        public ITwoWayBinding CreateTwoWayBinding(ListenerDelegate listener, Type expectedType)
+        public ITwoWayBinding CreateTwoWayBinding(ListenerDelegate listener, Type typeAcceptedByListener,
+            Type sourceType)
         {
-            var disposables = CreateListener(listener, expectedType, (action, info, wrapper) =>
+            var disposables = CreateListener(listener, typeAcceptedByListener, sourceType, (action, info, wrapper) =>
             {
                 var result = new TwoWayBinding(action, obj =>
                 {
-                   return wrapper.UpdateSource(obj, info);
+                    return wrapper.UpdateSource(obj, info);
                 });
                 return result;
             });
@@ -67,6 +78,8 @@ namespace iSukces.Binding
             Path = path;
             return this;
         }
+
+        public object CnverterParameter { get; set; }
 
         public string                 Path      { get; set; }
         public IBindingValueConverter Converter { get; set; }

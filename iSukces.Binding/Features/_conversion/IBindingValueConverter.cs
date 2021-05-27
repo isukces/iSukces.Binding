@@ -1,12 +1,17 @@
 ﻿using System;
 using System.Globalization;
+using JetBrains.Annotations;
 
 namespace iSukces.Binding
 {
     public interface IBindingValueConverter
     {
-        object Convert(object value, Type targetType, object parameter, CultureInfo culture);
+        [CanBeNull]
+        object Convert([CanBeNull] object value, [NotNull] Type targetType, [CanBeNull] object parameter,
+            [CanBeNull] CultureInfo culture);
 
-        object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture);
+        [CanBeNull]
+        object ConvertBack([CanBeNull] object value, [NotNull] Type targetType, [CanBeNull] object parameter,
+            [CanBeNull] CultureInfo culture);
     }
 }
