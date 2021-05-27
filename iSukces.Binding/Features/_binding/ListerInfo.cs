@@ -26,13 +26,14 @@ namespace iSukces.Binding
         public ListerInfo(ListenerDelegate action, Type typeAcceptedByListener,
             Type sourceType,
             IBindingValueConverter converter,
-            object converterParameter)
+            object converterParameter, CultureInfo currentCulture)
         {
             _action                 = action;
             _sourceType             = sourceType ?? typeof(object);
             _typeAcceptedByListener = typeAcceptedByListener ?? typeof(object);
             _converter              = converter;
             _converterParameter     = converterParameter;
+            _currentCulture         = currentCulture ?? CultureInfo.CurrentCulture;
         }
 
         private object Convert(object value)
@@ -40,7 +41,7 @@ namespace iSukces.Binding
             if (_converter is null) return value;
             try
             {
-                value = _converter.Convert(value, _typeAcceptedByListener, _converterParameter, CurrentCulture);
+                value = _converter.Convert(value, _typeAcceptedByListener, _converterParameter, _currentCulture);
             }
             catch
             {
@@ -55,7 +56,7 @@ namespace iSukces.Binding
             if (_converter is null) return value;
             try
             {
-                value = _converter.ConvertBack(value, _sourceType, _converterParameter, CurrentCulture);
+                value = _converter.ConvertBack(value, _sourceType, _converterParameter, _currentCulture);
             }
             catch
             {
@@ -74,8 +75,6 @@ namespace iSukces.Binding
 
         public static Type DoesntMatter = null;
 
-        private static CultureInfo CurrentCulture => CultureInfo.CurrentUICulture;
-
         private readonly ListenerDelegate _action;
         private readonly IBindingValueConverter _converter;
         private readonly object _converterParameter;
@@ -83,5 +82,7 @@ namespace iSukces.Binding
         [NotNull] private readonly Type _sourceType;
 
         [NotNull] private readonly Type _typeAcceptedByListener;
+
+        private readonly CultureInfo _currentCulture;
     }
 }

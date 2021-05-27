@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using JetBrains.Annotations;
 
 namespace iSukces.Binding
@@ -29,8 +30,9 @@ namespace iSukces.Binding
             Func<Action, ListerInfo, BindingValueWrapper, IDisposable> factory)
         {
             var disposables = new DisposableHolder();
-            var wrapper = _wrapper.CreateAccessor(Path);
-            var info = new ListerInfo(listener, typeAcceptedByListener, sourceType, Converter, CnverterParameter);
+            var wrapper     = _wrapper.CreateAccessor(Path);
+            var info = new ListerInfo(listener, typeAcceptedByListener, sourceType, Converter, ConverterParameter,
+                CultureInfo);
             disposables.RemoveFromListerer = wrapper.AddListenerAction(info);
 
             void DisposableAction()
@@ -49,11 +51,12 @@ namespace iSukces.Binding
             return disposables;
         }
 
-        public ITwoWayBinding CreateTwoWayBinding<TSource>(ListenerDelegate listener, Type typeAcceptedByListener = null)
+        public ITwoWayBinding CreateTwoWayBinding<TSource>(ListenerDelegate listener,
+            Type typeAcceptedByListener = null)
         {
             return CreateTwoWayBinding(listener, typeAcceptedByListener, typeof(TSource));
         }
-        
+
         public ITwoWayBinding CreateTwoWayBinding<TSource, TListener>(ListenerDelegate listener)
         {
             return CreateTwoWayBinding(listener, typeof(TListener), typeof(TSource));
@@ -79,10 +82,12 @@ namespace iSukces.Binding
             return this;
         }
 
-        public object CnverterParameter { get; set; }
+        public object ConverterParameter { get; set; }
 
-        public string                 Path      { get; set; }
-        public IBindingValueConverter Converter { get; set; }
+        public string                 Path        { get; set; }
+        public IBindingValueConverter Converter   { get; set; }
+        public CultureInfo            CultureInfo { get; set; }
+
         private readonly BindingValueWrapper _wrapper;
 
 

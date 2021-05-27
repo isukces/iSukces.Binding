@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
 using iSukces.Binding.Test.Data;
 using Xunit;
 
@@ -127,7 +128,7 @@ Got value ValueChanged: '13'
 
             var data    = new SimpleNpc(log, "Obj") {IntNumber = 99};
             var binding = bm.From(data, q => q.IntNumber);
-            binding.Converter = new IntValueConverter();
+            binding.Converter = NumberValueConverter.Instance;
             Assert.False(data.HasPropertyChangedSubscribers);
 
             var changessCount = 0;
@@ -137,6 +138,7 @@ Got value ValueChanged: '13'
                 {
                     Assert.True(q is null or string);
                 }
+
                 log.AppendLine($"Got value {kind}: '{q}'");
                 changessCount++;
             });
@@ -152,6 +154,52 @@ Got value ValueChanged: '13'
 Got value StartBinding: '99'
 Got value ValueChanged: '13'
 Got value UpdateSource: '27'
+";
+            var log1 = log.ToString().Trim();
+            Assert.Equal(expected.Trim(), log1);
+        }
+
+
+        [Theory]
+        [InlineData("en-US", "$99.45", "$27.44")]
+        [InlineData("en-GB", "£99.45", "£27.44")]
+        [InlineData("pl-PL", "99,45 zł", "27,44 zł")]
+        [InlineData("fr-Fr", "99,45 €", "27,44 €")]
+        public void T05_Should_update_value_with_conversion_and_culture(string culture, string expected1, string expected2)
+        {
+            var bm  = new BindingManager();
+            var log = new StringBuilder();
+
+            var data    = new SimpleNpc(log, "Obj") {DecimalNumber = 99.45m};
+            var binding = bm.From(data, q => q.DecimalNumber);
+            binding.Converter          = NumberValueConverter.Instance;
+            binding.CultureInfo        = CultureInfo.GetCultureInfo(culture);
+            binding.ConverterParameter = "c2";
+            Assert.False(data.HasPropertyChangedSubscribers);
+
+            var changessCount = 0;
+            var updater = binding.CreateTwoWayBinding<decimal, string>((q, kind) =>
+            {
+                if (q is not BindingSpecial)
+                {
+                    Assert.True(q is null or string);
+                }
+
+                log.AppendLine($"Got value {kind}: '{q}'");
+                changessCount++;
+            });
+
+            data.IntNumber = 13;
+            var stringNumber = 27.44.ToString(binding.CultureInfo);
+            var updateResult = updater.UpdateSource(stringNumber); 
+            Assert.Equal(UpdateSourceResult.Ok, updateResult);
+            Assert.Equal(27.44m, data.DecimalNumber);
+
+            Assert.Equal(2, changessCount);
+              string expected = @$"
+[Obj] Subscribe PropertyChanged
+Got value StartBinding: '{expected1}'
+Got value UpdateSource: '{expected2}'
 ";
             var log1 = log.ToString().Trim();
             Assert.Equal(expected.Trim(), log1);
