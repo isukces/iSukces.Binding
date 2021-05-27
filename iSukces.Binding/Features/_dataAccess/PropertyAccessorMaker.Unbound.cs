@@ -12,8 +12,9 @@ namespace iSukces.Binding
             }
 
             public bool TryChangeSource(object source) { return AcceptsSource(source); }
-
+            
             public object this[string propertyName] => BindingSpecial.Unbound;
+            public UpdateSourceResult Write(string propertyName, object value) { throw new UnableToChangeReadOnlyPropertyException("");  }
 
             public static Unbound Instance => UnboundHolder.SingleIstance;
 

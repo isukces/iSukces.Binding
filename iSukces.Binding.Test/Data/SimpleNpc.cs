@@ -13,6 +13,10 @@ namespace iSukces.Binding.Test.Data
 
         public bool IsChecked { get => _isChecked; set => SetAndNotify(ref _isChecked, value); }
 
+        public int IntNumber { get => _intNumber; set => SetAndNotify(ref _intNumber, value); }
+        private int _intNumber;
+
+
         private bool _isChecked;
         private string _title;
     }

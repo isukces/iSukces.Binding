@@ -16,7 +16,15 @@ namespace iSukces.Binding
         /// </summary>
         public static readonly BindingSpecial Unbound = new(BindingSpecialKind.Unbound);
 
-        public BindingSpecialKind Kind { get; }
+
+        /// <summary>
+        /// Invalid value after conversion
+        /// </summary>
+        public static readonly BindingSpecial Invalid = new(BindingSpecialKind.Invalid);
+        
+        
+        public        BindingSpecialKind Kind    { get; }
+        
     }
 
     public enum BindingSpecialKind
@@ -29,6 +37,11 @@ namespace iSukces.Binding
         /// <summary>
         ///     Source has been unboud from parent
         /// </summary>
-        Unbound
+        Unbound,
+        
+        /// <summary>
+        /// Unable to convert to destination type
+        /// </summary>
+        Invalid
     }
 }

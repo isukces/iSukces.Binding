@@ -19,6 +19,11 @@
 
             public object this[string propertyName] => BindingSpecial.NotSet;
 
+            public UpdateSourceResult Write(string propertyName, object value)
+            {
+                throw new UnableToChangeReadOnlyPropertyException("");
+            }
+
             public static EmptyAccessor Instance => NotSetPropertyAccessorHolder.SingleIstance;
 
             public static class NotSetPropertyAccessorHolder

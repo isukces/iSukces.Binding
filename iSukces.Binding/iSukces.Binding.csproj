@@ -2,15 +2,27 @@
 
     <PropertyGroup>
         <LangVersion>9</LangVersion>
-        <TargetFrameworks>net47;net48;netcoreapp3.1</TargetFrameworks>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Title>iSukces.Binding</Title>
         <Authors>Internet Sukces Piotr Stęclik</Authors>
         <Copyright>Copyright © Internet Sukces Piotr Stęclik 2021</Copyright>
+        <TargetFramework>net472</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="JetBrains.Annotations" Version="2021.1.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="Features\_dataAccess\PropertyAccessorMaker.EmptyAccessor.cs">
+        <DependentUpon>PropertyAccessorMaker.cs</DependentUpon>
+      </Compile>
+      <Compile Update="Features\_dataAccess\PropertyAccessorMaker.ReflectionAccessor.cs">
+        <DependentUpon>PropertyAccessorMaker.cs</DependentUpon>
+      </Compile>
+      <Compile Update="Features\_dataAccess\PropertyAccessorMaker.Unbound.cs">
+        <DependentUpon>PropertyAccessorMaker.cs</DependentUpon>
+      </Compile>
     </ItemGroup>
 
 </Project>

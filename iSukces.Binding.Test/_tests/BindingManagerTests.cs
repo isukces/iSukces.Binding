@@ -14,14 +14,14 @@ namespace iSukces.Binding.Test
             var bm  = new BindingManager();
             var log = new StringBuilder();
 
-            var obj = new SimpleNpc(log, "Obj");
-            obj.Title = "initial value";
-            Assert.False(obj.HasPropertyChangedSubscribers);
+            var data = new SimpleNpc(log, "Obj");
+            data.Title = "initial value";
+            Assert.False(data.HasPropertyChangedSubscribers);
 
-            var binding = bm.From(obj);
-            Assert.False(obj.HasPropertyChangedSubscribers);
-            binding.WithPath(nameof(obj.Title));
-            Assert.False(obj.HasPropertyChangedSubscribers);
+            var binding = bm.From(data);
+            Assert.False(data.HasPropertyChangedSubscribers);
+            binding.WithPath(nameof(data.Title));
+            Assert.False(data.HasPropertyChangedSubscribers);
             int changessCount = 0;
             var listener = binding.CreateListener((q, kind) =>
             {
@@ -29,8 +29,8 @@ namespace iSukces.Binding.Test
                 changessCount++;
             });
             Assert.Equal(1, changessCount);
-            Assert.True(obj.HasPropertyChangedSubscribers);
-            obj.Title = "new Value";
+            Assert.True(data.HasPropertyChangedSubscribers);
+            data.Title = "new Value";
             Assert.Equal(2, changessCount);
 
             if (testNumber == "dispose listener")
@@ -38,7 +38,7 @@ namespace iSukces.Binding.Test
             if (testNumber == "dispose binding manager")
                 bm.Dispose();
 
-            Assert.False(obj.HasPropertyChangedSubscribers);
+            Assert.False(data.HasPropertyChangedSubscribers);
 
             const string expected = @"
 [Obj] Subscribe PropertyChanged
@@ -46,6 +46,108 @@ Got value StartBinding: 'initial value'
 Got value ValueChanged: 'new Value'
 Got value EndBinding: 'Unbound'
 [Obj] Unubscribe PropertyChanged
+";
+            var log1 = log.ToString().Trim();
+            Assert.Equal(expected.Trim(), log1);
+        }
+
+
+        [Fact]
+        public void T02_Should_update_source()
+        {
+            var bm  = new BindingManager();
+            var log = new StringBuilder();
+
+            var data    = new SimpleNpc(log, "Obj") {IntNumber = 99};
+            var binding = bm.From(data, q => q.IntNumber);
+            Assert.False(data.HasPropertyChangedSubscribers);
+
+            var changessCount = 0;
+            var updater = binding.CreateTwoWayBinding<int>((q, kind) =>
+            {
+                if (q is not BindingSpecial)
+                {
+                    Assert.True(q is int);
+                }
+
+                log.AppendLine($"Got value {kind}: '{q}'");
+                changessCount++;
+            });
+
+            data.IntNumber = 13;
+            updater.UpdateSource(27);
+            Assert.Equal(27, data.IntNumber);
+
+            Assert.Equal(3, changessCount);
+            const string expected = @"
+[Obj] Subscribe PropertyChanged
+Got value StartBinding: '99'
+Got value ValueChanged: '13'
+Got value ValueChanged: '27'
+";
+            var log1 = log.ToString().Trim();
+            Assert.Equal(expected.Trim(), log1);
+        }
+
+        [Fact]
+        public void T03_Should_not_update_invalid_value()
+        {
+            var bm  = new BindingManager();
+            var log = new StringBuilder();
+
+            var data    = new SimpleNpc(log, "Obj") {IntNumber = 99};
+            var binding = bm.From(data, q => q.IntNumber);
+            Assert.False(data.HasPropertyChangedSubscribers);
+
+            var changessCount = 0;
+            var updater = binding.CreateTwoWayBinding<int>((q, kind) =>
+            {
+                log.AppendLine($"Got value {kind}: '{q}'");
+                changessCount++;
+            });
+
+            data.IntNumber = 13;
+            var updateResult = updater.UpdateSource("27");
+            Assert.Equal(UpdateSourceResult.InvalidValue, updateResult);
+            Assert.Equal(2, changessCount);
+            const string expected = @"
+[Obj] Subscribe PropertyChanged
+Got value StartBinding: '99'
+Got value ValueChanged: '13'
+";
+            var log1 = log.ToString().Trim();
+            Assert.Equal(expected.Trim(), log1);
+        }
+
+        [Fact]
+        public void T04_Should_update_value_with_conversion()
+        {
+            var bm  = new BindingManager();
+            var log = new StringBuilder();
+
+            var data    = new SimpleNpc(log, "Obj") {IntNumber = 99};
+            var binding = bm.From(data, q => q.IntNumber);
+            binding.Converter = new IntValueConverter();
+            Assert.False(data.HasPropertyChangedSubscribers);
+
+            var changessCount = 0;
+            var updater = binding.CreateTwoWayBinding<int>((q, kind) =>
+            {
+                log.AppendLine($"Got value {kind}: '{q}'");
+                changessCount++;
+            });
+
+            data.IntNumber = 13;
+            var updateResult = updater.UpdateSource("27");
+            Assert.Equal(UpdateSourceResult.Ok, updateResult);
+            Assert.Equal(27, data.IntNumber);
+
+            Assert.Equal(3, changessCount);
+            const string expected = @"
+[Obj] Subscribe PropertyChanged
+Got value StartBinding: '99'
+Got value ValueChanged: '13'
+Got value UpdateSource: '27'
 ";
             var log1 = log.ToString().Trim();
             Assert.Equal(expected.Trim(), log1);

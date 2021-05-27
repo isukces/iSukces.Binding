@@ -34,6 +34,35 @@ namespace iSukces.Binding
                 return true;
             }
 
+            public UpdateSourceResult Write(string propertyName, object value)
+            {
+                if (_type is null)
+                    return UpdateSourceResult.NotSet;
+                if (!_byProperty.TryGetValue(propertyName, out var pi))
+                    return UpdateSourceResult.NotSet;
+                if (!pi.CanWrite) throw new UnableToChangeReadOnlyPropertyException("");
+
+                if (value is null)
+                {
+                    if (pi.PropertyType.IsClass)
+                    {
+                        pi.SetValue(_source, value);
+                        return UpdateSourceResult.Ok;
+                    }
+
+                    return UpdateSourceResult.InvalidValue;
+                }
+
+                var valueType = value.GetType();
+                if (pi.PropertyType.IsAssignableFrom(valueType))
+                {
+                    pi.SetValue(_source, value);
+                    return UpdateSourceResult.Ok;
+                }
+
+                return UpdateSourceResult.InvalidValue;
+            }
+
             public object this[string propertyName]
             {
                 get

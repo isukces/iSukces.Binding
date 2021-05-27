@@ -31,10 +31,22 @@ binding.Dispose(); // disposes single binding
 bm.Dispose(); // disposes all bindings
 ```
 
+#### Listener kinds
+
+Helps to identify value source:
+
+| kind               | meaning                                   |
+|--------------------|-------------------------------------------|
+| ```StartBinding``` | ust after binding                         |
+| ```EndBinding```   | binding was disposed                      |
+| ```UpdateSource``` | source was changed as a result of binding |
+| ```ValueChanged``` | source was changed                        |
+
+#### Listener rules
 
 | kind                                     | condition                                                                       |                    value                   |
 |------------------------------------------|---------------------------------------------------------------------------------|--------------------------------------------|
-| ```StartBinding``` or ```ValueChanged``` | source is not null and property exists and is readable                          | property value                             |
-| ```StartBinding``` or ```ValueChanged``` | source is not null and property exists and property reading throws an exception | ```BindingSpecial.PropertyReadException``` |
-| ```StartBinding``` or ```ValueChanged``` | source is null or property doesn't exist                                        | ```BindingSpecial.NotSet```                |
+| not ```EndBinding```                     | source is not null and property exists and is readable                          | property value                             |
+| not ```EndBinding```                     | source is not null and property exists and property reading throws an exception | ```BindingSpecial.PropertyReadException``` |
+| not ```EndBinding```                     | source is null or property doesn't exist                                        | ```BindingSpecial.NotSet```                |
 | ```EndBinding```                         |                                                                                 | ```BindingSpecial.Unbound```               |

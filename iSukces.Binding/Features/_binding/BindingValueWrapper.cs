@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 
@@ -16,7 +17,7 @@ namespace iSukces.Binding
         }
 
         [CanBeNull]
-        public IDisposable AddListenerAction(ListenerDelegate listener)
+        internal IDisposable AddListenerAction(ListerInfo listener)
         {
             ThrowIfDisposed();
             if (_listeners.Contains(listener))
@@ -171,6 +172,52 @@ namespace iSukces.Binding
             PropertyAccessorMaker.SureAccessor(_source, ref _accessor);
         }
 
+        internal UpdateSourceResult UpdateSource(object value, ListerInfo listerInfo)
+        {
+            try
+            {
+                ThrowIfDisposed();
+                if ((_flags & ValuePropagationFlags.UpdateSource) != 0)
+                    return UpdateSourceResult.NotSet;
+                _flags |= ValuePropagationFlags.UpdateSource;
+                try
+                {
+                    
+                    if (_owner is null)
+                    {
+                        Source = value;
+                        return UpdateSourceResult.Ok;
+                    }
+                    return _owner.UpdateSource(_ownerPropertyName, value, listerInfo);
+                }
+                finally
+                {
+                    _flags &= ~ValuePropagationFlags.UpdateSource;
+                }
+            }
+            catch (Exception e)
+            {
+                return UpdateSourceResult.FromException(e, value);
+            }
+        }
+
+        private UpdateSourceResult UpdateSource(string propertyName, object value, ListerInfo listerInfo)
+        {
+            ThrowIfDisposed();
+            var converter = listerInfo.Converter;
+            if (converter is not null)
+            {
+                value = converter.ConvertBack(value, listerInfo.ExpectedType, null, CultureInfo.CurrentCulture);
+            }
+            if (value is BindingSpecial special)
+            {
+                return UpdateSourceResult.Special;
+            }
+
+            SureAccessor();
+            return _accessor.Write(propertyName, value);
+        }
+
         public object Source
         {
             get => _source;
@@ -197,29 +244,33 @@ namespace iSukces.Binding
 
                 for (var index = 0; index < _listeners.Count; index++)
                 {
-                    var listener = _listeners[index];
-                    listener.Invoke(_source, ListenerDelegateKind.ValueChanged);
+                    var listener             = _listeners[index];
+                    var kind = ListenerDelegateKind.ValueChanged;
+                    if ((_flags & ValuePropagationFlags.UpdateSource) != 0)
+                        kind = ListenerDelegateKind.UpdateSource;
+                    listener.Invoke(_source, kind);
                 }
             }
         }
 
         public BindingManager BindingManager { get; }
 
-        private readonly List<ListenerDelegate> _listeners = new();
+        private readonly List<ListerInfo> _listeners = new();
         private readonly Dictionary<string, BindingValueWrapper> _properties = new();
         private IPropertyAccessor _accessor;
         private bool _isListening;
         private BindingValueWrapper _owner;
         private string _ownerPropertyName;
         private object _source;
+
+        private ValuePropagationFlags _flags;
     }
 
-    public delegate void ListenerDelegate(object value, ListenerDelegateKind kind);
 
-    public enum ListenerDelegateKind
+    [Flags]
+    enum ValuePropagationFlags
     {
-        ValueChanged,
-        StartBinding,
-        EndBinding
+        None = 0,
+        UpdateSource = 1
     }
 }

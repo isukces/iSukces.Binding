@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace iSukces.Binding
 {
@@ -24,6 +25,12 @@ namespace iSukces.Binding
             }
 
             base.DisposeInternal(disposing);
+        }
+
+        public BindingBuilder From<T>(T source, Expression<Func<T, object>> pathExpression)
+        {
+            var path = ExpressionTools.GetBindingPath(pathExpression);
+            return From(source).WithPath(path);
         }
 
         public BindingBuilder From(object source)

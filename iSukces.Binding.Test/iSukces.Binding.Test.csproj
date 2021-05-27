@@ -2,10 +2,10 @@
 
     <PropertyGroup>
         <LangVersion>9</LangVersion>
-        <TargetFrameworks>net48</TargetFrameworks>
         <LangVersion>9</LangVersion>
         <Authors>Internet Sukces Piotr Stęclik</Authors>
         <Copyright>Copyright © Internet Sukces Piotr Stęclik 2021</Copyright>
+        <TargetFramework>net472</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>

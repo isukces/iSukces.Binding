@@ -26,8 +26,6 @@ namespace iSukces.Binding.Test.Data
             return true;
         }
 
-        private event PropertyChangedEventHandler propertyChanged;
-
         public event PropertyChangedEventHandler PropertyChanged
         {
             add
@@ -41,6 +39,8 @@ namespace iSukces.Binding.Test.Data
                 propertyChanged -= value;
             }
         }
+
+        private event PropertyChangedEventHandler propertyChanged;
 
         public bool HasPropertyChangedSubscribers => propertyChanged is not null;
 
