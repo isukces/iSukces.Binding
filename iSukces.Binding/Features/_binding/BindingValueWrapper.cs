@@ -188,7 +188,13 @@ namespace iSukces.Binding
                         Source = value;
                         return UpdateSourceResult.Ok;
                     }
-                    return _owner.UpdateSource(_ownerPropertyName, value, listerInfo);
+
+                    var ownerResult = _owner.UpdateSource(_ownerPropertyName, value, listerInfo);
+                    if (ownerResult.Exception != null)
+                    {
+                        Source = BindingSpecial.Invalid;
+                    }
+                    return ownerResult;
                 }
                 finally
                 {
@@ -213,7 +219,16 @@ namespace iSukces.Binding
             }
 
             SureAccessor();
-            return _accessor.Write(propertyName, value);
+            try
+            {
+                var result = _accessor.Write(propertyName, value);
+                return result;
+            } catch (Exception e)
+            {
+                return UpdateSourceResult.FromException(e, value);
+            }
+
+            
         }
 
         public object Source
@@ -266,7 +281,7 @@ namespace iSukces.Binding
 
 
     [Flags]
-    enum ValuePropagationFlags
+    internal enum ValuePropagationFlags
     {
         None = 0,
         UpdateSource = 1

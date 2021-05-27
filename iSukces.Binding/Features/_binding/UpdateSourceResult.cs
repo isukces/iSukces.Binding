@@ -1,12 +1,13 @@
 using System;
+using System.Reflection;
 
 namespace iSukces.Binding
 {
     public sealed class UpdateSourceResult
     {
-        UpdateSourceResult() { }
+        private UpdateSourceResult() { }
 
-        UpdateSourceResult(Exception exception, object value)
+        private UpdateSourceResult(Exception exception, object value)
         {
             Exception = exception;
             Value     = value;
@@ -14,6 +15,11 @@ namespace iSukces.Binding
 
         public static UpdateSourceResult FromException(Exception exception, object value)
         {
+            if (exception.InnerException != null)
+                if (exception is TargetInvocationException)
+                {
+                    return FromException(exception.InnerException, value);
+                }
             return new(exception, value);
         }
 

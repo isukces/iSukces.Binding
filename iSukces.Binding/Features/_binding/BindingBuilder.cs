@@ -95,7 +95,7 @@ namespace iSukces.Binding
         ///     Holds references to disposable objects. Its required to avoid
         ///     'Access to modified captured variable'
         /// </summary>
-        sealed class DisposableHolder
+        private sealed class DisposableHolder
         {
             [CanBeNull]
             public IDisposable RemoveFromListerer { get; set; }

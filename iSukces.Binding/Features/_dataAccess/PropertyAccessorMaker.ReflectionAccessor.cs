@@ -18,6 +18,8 @@ namespace iSukces.Binding
             {
                 if (EmptyAccessor.AcceptsSource(source))
                     return false;
+                if (Unbound.AcceptsSource(source))
+                    return false;
                 _source = source;
                 if (source is null)
                 {

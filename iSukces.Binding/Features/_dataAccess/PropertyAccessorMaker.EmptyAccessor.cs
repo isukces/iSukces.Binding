@@ -11,7 +11,9 @@
                 if (source is null)
                     return true;
                 if (source is BindingSpecial s)
-                    return s.Kind == BindingSpecialKind.NotSet;
+                    return s.Kind is BindingSpecialKind.NotSet 
+                        or BindingSpecialKind.Invalid 
+                        or BindingSpecialKind.Unbound;
                 return false;
             }
 

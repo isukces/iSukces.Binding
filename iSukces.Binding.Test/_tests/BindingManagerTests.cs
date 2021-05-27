@@ -165,7 +165,8 @@ Got value UpdateSource: '27'
         [InlineData("en-GB", "£99.45", "£27.44")]
         [InlineData("pl-PL", "99,45 zł", "27,44 zł")]
         [InlineData("fr-Fr", "99,45 €", "27,44 €")]
-        public void T05_Should_update_value_with_conversion_and_culture(string culture, string expected1, string expected2)
+        public void T05_Should_update_value_with_conversion_and_culture(string culture, string expected1,
+            string expected2)
         {
             var bm  = new BindingManager();
             var log = new StringBuilder();
@@ -189,17 +190,55 @@ Got value UpdateSource: '27'
                 changessCount++;
             });
 
-            data.IntNumber = 13;
             var stringNumber = 27.44.ToString(binding.CultureInfo);
-            var updateResult = updater.UpdateSource(stringNumber); 
+            var updateResult = updater.UpdateSource(stringNumber);
             Assert.Equal(UpdateSourceResult.Ok, updateResult);
             Assert.Equal(27.44m, data.DecimalNumber);
 
             Assert.Equal(2, changessCount);
-              string expected = @$"
+            string expected = @$"
 [Obj] Subscribe PropertyChanged
 Got value StartBinding: '{expected1}'
 Got value UpdateSource: '{expected2}'
+";
+            var log1 = log.ToString().Trim();
+            Assert.Equal(expected.Trim(), log1);
+        }
+        
+        
+        [Fact]
+        public void T06_Should_catch_update_source_exception()
+        {
+            var bm  = new BindingManager();
+            var log = new StringBuilder();
+
+            var data    = new SimpleNpc(log, "Obj") {DecimalNumber = 99.45m};
+            var binding = bm.From(data, q => q.DecimalNumber);
+            Assert.False(data.HasPropertyChangedSubscribers);
+
+            var changessCount = 0;
+            var updater = binding.CreateTwoWayBinding<decimal, string>((q, kind) =>
+            {
+                if (q is not BindingSpecial)
+                {
+                    Assert.True(q is decimal);
+                }
+
+                log.AppendLine($"Got value {kind}: '{q}'");
+                changessCount++;
+            });
+
+            var updateResult = updater.UpdateSource(-1.345m);
+            Assert.NotNull(updateResult.Exception);
+            Assert.Equal(99.45m, data.DecimalNumber);
+            Assert.Equal(2, changessCount);
+            bm.Dispose();
+            const string expected = @"
+[Obj] Subscribe PropertyChanged
+Got value StartBinding: '99,45'
+Got value UpdateSource: 'Invalid'
+Got value EndBinding: 'Unbound'
+[Obj] Unubscribe PropertyChanged
 ";
             var log1 = log.ToString().Trim();
             Assert.Equal(expected.Trim(), log1);
