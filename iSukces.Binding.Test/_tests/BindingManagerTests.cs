@@ -42,7 +42,7 @@ namespace iSukces.Binding.Test
 [Obj] Subscribe PropertyChanged
 Got value StartBinding: 'initial value'
 Got value ValueChanged: 'new Value'
-Got value EndBinding: 'Unbound'
+Got value EndBinding: 'Unbound', last valid 'new Value'
 [Obj] Unubscribe PropertyChanged
 ";
             var log1 = testing.GetLog();
