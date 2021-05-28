@@ -1,6 +1,7 @@
 
 # iSukces.Binding
-This package is an implementation of data binding inspired by WPF data binding. I had to port WPF application into Windows Forms platform and I found that I need a framework for easy data binding in various scenarios.
+This package is an implementation of data binding inspired by WPF data binding. 
+I had to port the WPF application into Windows Forms platform, and I found that I need a framework for easy data binding in various scenarios.
 
 __Content__
 * [Deep binding](#deep-binding)
@@ -11,16 +12,18 @@ __Content__
 
 
 ## Deep binding
-Library supports binding for properties in any level like. ```Source.DataModel.SomeObject.SomeProperty```. Changes at each level are checked.
-
+Library supports binding for properties at any level like ```Source.DataModel.SomeObject.SomeProperty```.
+BindingManager checks changes at each level.
 
 ## Disposing
-Bindings are managed by ```BindingManager``` which supports ```IDisposable``` interface.   
+Bindings are managed by ```BindingManager```, which supports ```IDisposable``` interface.   
 Disposing manager releases all bindings and unsubscribes property changing events.  
-It is also possible to dispose single binding.
+It is also possible to unbind single binding.
 
 ## Listener scenario
-Listener scenario is the simplest way to use binding. It's necessary to choose source object, binding path and listener action. Each time the property value is changed the given action is invoked.
+The listener scenario is the simplest way to use binding. 
+It's necessary to choose source object, binding path and listener action. 
+Each time the property value is changed, the given action is invoked.
 
 #### Example
 ```c#  
@@ -36,7 +39,7 @@ binding.Dispose(); // disposes single binding
 bm.Dispose(); // disposes all bindings  
 ```  
 
-```IValueInfo``` object passed into lister method provides binding value, updating king (see table below) and last valid source value if current value is not valid.
+```IValueInfo``` object passed into lister method provides binding value, updating king (see table below) and last valid source value if the current value is invalid.
 
 #### Listener kinds
 
@@ -61,7 +64,9 @@ Helps to identify value source:
 
 ## #Listener scenario with value converter
 
-Similarly to WPF data binding, it's possible to put a value converter between data source and listener so type conversion can be performed automatically. In the listener scenario, one-way conversion is used. It's possible to use two-way conversion in more advanced scenarios.
+Similarly to WPF data binding, it's possible to put a value converter between data source and listener so type conversion can be performed automatically. 
+In the listener scenario, one-way conversion is used. 
+It's possible to use two-way conversion in more advanced strategies.
 
 #### Example
 ```c#  
@@ -72,7 +77,8 @@ builder.CultureInfo = CultureInfo.GetCultureInfo("en-GB");
 builder.ConverterParameter = "c2";  
 var binding =builder.CreateListener(info =>  
 {  
- Console.WriteLine(info.Value);});  
+    Console.WriteLine(info.Value);
+});  
 ```  
 Once we set ```model.DecimalValue``` with value ```99.45```, the text ```£99.45``` will be passed into listener due to decimal value conversion with ```C2``` format and ```gb-GB``` culture info.
 
@@ -88,6 +94,7 @@ var builder = bm.From(model, q=>q.DecimalNumber);
 builder.ListenerDispatcher = Dispatcher.CurrentDispatcher;  
 var binding = builder.CreateListener(info =>  
 {  
- // this method is invoked with d});  
+    // this method is invoked with dispatcher
+});  
 ```
-Note that data conversion, if any, is always performed in data thread.
+Note that data conversion, if any, is always performed in the same thread that the data source was changed.
