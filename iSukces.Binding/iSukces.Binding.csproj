@@ -25,4 +25,8 @@
       </Compile>
     </ItemGroup>
 
+    <ItemGroup>
+      <Reference Include="WindowsBase" />
+    </ItemGroup>
+
 </Project>

@@ -4,7 +4,7 @@ namespace iSukces.Binding.Test.Data
 {
     class Wrap2Npc : NpcBase
     {
-        public Wrap2Npc(StringBuilder log, string name)
+        public Wrap2Npc(ITestingLogger log, string name)
             : base(log, name)
         {
         }

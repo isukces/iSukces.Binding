@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Windows.Threading;
 using JetBrains.Annotations;
 
 namespace iSukces.Binding
@@ -32,7 +33,7 @@ namespace iSukces.Binding
             var disposables = new DisposableHolder();
             var wrapper     = _wrapper.CreateAccessor(Path);
             var info = new ListerInfo(listener, typeAcceptedByListener, sourceType, Converter, ConverterParameter,
-                CultureInfo);
+                CultureInfo, ListenerDispatcher);
             disposables.RemoveFromListerer = wrapper.AddListenerAction(info);
 
             void DisposableAction()
@@ -87,6 +88,7 @@ namespace iSukces.Binding
         public string                 Path        { get; set; }
         public IBindingValueConverter Converter   { get; set; }
         public CultureInfo            CultureInfo { get; set; }
+        public Dispatcher             ListenerDispatcher  { get; set; }
 
         private readonly BindingValueWrapper _wrapper;
 
