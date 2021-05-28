@@ -61,13 +61,29 @@ Similarly to WPF data binding, it's possible to put a value converter between da
 #### Example
 ```c#
 var model = new Model();
-var buildier = bm.From(model, q=>q.DecimalNumber);
-buildier.Converter   = NumberValueConverter.Instance;
-buildier.CultureInfo = CultureInfo.GetCultureInfo("en-GB");
-buildier.ConverterParameter = "c2";
-var binding =buildier.CreateListener(info =>
+var builder = bm.From(model, q=>q.DecimalNumber);
+builder.Converter   = NumberValueConverter.Instance;
+builder.CultureInfo = CultureInfo.GetCultureInfo("en-GB");
+builder.ConverterParameter = "c2";
+var binding =builder.CreateListener(info =>
 {
     Console.WriteLine(info.Value);
 });
 ```
 Once we set ```model.DecimalValue``` with value ```99.45```, the text ```£99.45``` will be passed into listener due to decimal value conversion with ```C2``` format and ```gb-GB``` culture info.
+
+
+
+## Listener dispatcher
+It is also possible to specify a dispatcher to be used when listener action is invoked.
+
+#### Example
+```c#
+var model = new Model();
+var builder = bm.From(model, q=>q.DecimalNumber);
+builder.ListenerDispatcher = Dispatcher.CurrentDispatcher;
+var binding = builder.CreateListener(info =>
+{
+    // this method is invoked with d
+});
+```

@@ -17,4 +17,8 @@
       <ProjectReference Include="..\iSukces.Binding\iSukces.Binding.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Reference Include="WindowsBase" />
+    </ItemGroup>
+
 </Project>

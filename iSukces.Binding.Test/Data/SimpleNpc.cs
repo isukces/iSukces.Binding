@@ -5,7 +5,7 @@ namespace iSukces.Binding.Test.Data
 {
     class SimpleNpc : NpcBase
     {
-        public SimpleNpc(StringBuilder log, string name)
+        public SimpleNpc(ITestingLogger log, string name)
             : base(log, name)
         {
         }
