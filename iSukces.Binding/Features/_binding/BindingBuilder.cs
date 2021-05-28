@@ -12,27 +12,22 @@ namespace iSukces.Binding
 
         public IDisposable CreateListener(ListenerDelegate listener)
         {
-            return CreateListener(listener, ListerInfo.DoesntMatter, ListerInfo.DoesntMatter);
+            return CreateListener(listener, ListerInfo.DoesntMatter);
         }
-
+        
         public IDisposable CreateListener(ListenerDelegate listener, Type typeAcceptedByListener)
         {
-            return CreateListener(listener, typeAcceptedByListener, ListerInfo.DoesntMatter);
-        }
-
-        public IDisposable CreateListener(ListenerDelegate listener, Type typeAcceptedByListener, Type sourceType)
-        {
-            var disposables = CreateListener(listener, typeAcceptedByListener, sourceType, null);
+            var disposables = CreateListener(listener, typeAcceptedByListener, null);
             return disposables.MainDisposing;
         }
 
         private DisposableHolder CreateListener(ListenerDelegate listener,
-            Type typeAcceptedByListener, Type sourceType,
+            Type typeAcceptedByListener,
             Func<Action, ListerInfo, BindingValueWrapper, IDisposable> factory)
         {
             var disposables = new DisposableHolder();
             var wrapper     = _wrapper.CreateAccessor(Path);
-            var info = new ListerInfo(listener, typeAcceptedByListener, sourceType, Converter, ConverterParameter,
+            var info = new ListerInfo(listener, typeAcceptedByListener, Converter, ConverterParameter,
                 CultureInfo, ListenerDispatcher);
             disposables.RemoveFromListerer = wrapper.AddListenerAction(info);
 
@@ -51,22 +46,16 @@ namespace iSukces.Binding
             _wrapper.BindingManager.AddDisposable(disposables.MainDisposing);
             return disposables;
         }
+        
 
-        public ITwoWayBinding CreateTwoWayBinding<TSource>(ListenerDelegate listener,
-            Type typeAcceptedByListener = null)
+        public ITwoWayBinding CreateTwoWayBinding<TListener>(ListenerDelegate listener)
         {
-            return CreateTwoWayBinding(listener, typeAcceptedByListener, typeof(TSource));
+            return CreateTwoWayBinding(listener, typeof(TListener));
         }
 
-        public ITwoWayBinding CreateTwoWayBinding<TSource, TListener>(ListenerDelegate listener)
+        public ITwoWayBinding CreateTwoWayBinding(ListenerDelegate listener, Type typeAcceptedByListener)
         {
-            return CreateTwoWayBinding(listener, typeof(TListener), typeof(TSource));
-        }
-
-        public ITwoWayBinding CreateTwoWayBinding(ListenerDelegate listener, Type typeAcceptedByListener,
-            Type sourceType)
-        {
-            var disposables = CreateListener(listener, typeAcceptedByListener, sourceType, (action, info, wrapper) =>
+            var disposables = CreateListener(listener, typeAcceptedByListener, (action, info, wrapper) =>
             {
                 var result = new TwoWayBinding(action, obj =>
                 {
@@ -77,18 +66,37 @@ namespace iSukces.Binding
             return (ITwoWayBinding)disposables.MainDisposing;
         }
 
+        public BindingBuilder WithConverter(IBindingValueConverter converter)
+        {
+            Converter = converter;
+            return this;
+        }
+
+        public BindingBuilder WithConverter(IBindingValueConverter converter, object converterParameter)
+        {
+            Converter          = converter;
+            ConverterParameter = converterParameter;
+            return this;
+        }
+
+        public BindingBuilder WithListenerDispatcher(Dispatcher dispatcher = null)
+        {
+            ListenerDispatcher = dispatcher ?? Dispatcher.CurrentDispatcher;
+            return this;
+        }
+
         public BindingBuilder WithPath(string path)
         {
             Path = path;
             return this;
         }
 
-        public object ConverterParameter { get; set; }
 
-        public string                 Path        { get; set; }
-        public IBindingValueConverter Converter   { get; set; }
-        public CultureInfo            CultureInfo { get; set; }
-        public Dispatcher             ListenerDispatcher  { get; set; }
+        public string                 Path               { get; set; }
+        public IBindingValueConverter Converter          { get; set; }
+        public object                 ConverterParameter { get; set; }
+        public CultureInfo            CultureInfo        { get; set; }
+        public Dispatcher             ListenerDispatcher { get; set; }
 
         private readonly BindingValueWrapper _wrapper;
 

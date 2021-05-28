@@ -14,6 +14,25 @@ namespace iSukces.Binding
                 _type   = source?.GetType();
             }
 
+            public Type GetPropertyType(string propertyName)
+            {
+                if (_type is null)
+                    return null;
+                var propertyInfo = SurePropertyInfo(propertyName);
+                return propertyInfo?.PropertyType;
+            }
+
+            private PropertyInfo SurePropertyInfo(string propertyName)
+            {
+                if (!_byProperty.TryGetValue(propertyName, out var propertyInfo))
+                {
+                    _byProperty[propertyName] = propertyInfo =
+                        _type.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
+                }
+
+                return propertyInfo;
+            }
+
             public bool TryChangeSource(object source)
             {
                 if (EmptyAccessor.AcceptsSource(source))
@@ -71,11 +90,7 @@ namespace iSukces.Binding
                 {
                     if (_type is null)
                         return BindingSpecial.NotSet;
-                    if (!_byProperty.TryGetValue(propertyName, out var propertyInfo))
-                    {
-                        _byProperty[propertyName] = propertyInfo =
-                            _type.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
-                    }
+                    var propertyInfo = SurePropertyInfo(propertyName);
 
                     if (propertyInfo is null)
                         return BindingSpecial.NotSet;

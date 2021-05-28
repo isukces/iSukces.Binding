@@ -1,4 +1,6 @@
-﻿namespace iSukces.Binding
+﻿using System;
+
+namespace iSukces.Binding
 {
     internal partial class PropertyAccessorMaker
     {
@@ -11,20 +13,21 @@
                 if (source is null)
                     return true;
                 if (source is BindingSpecial s)
-                    return s.Kind is BindingSpecialKind.NotSet 
-                        or BindingSpecialKind.Invalid 
+                    return s.Kind is BindingSpecialKind.NotSet
+                        or BindingSpecialKind.Invalid
                         or BindingSpecialKind.Unbound;
                 return false;
             }
 
-            public bool TryChangeSource(object source) { return AcceptsSource(source); }
+            public Type GetPropertyType(string propertyName) => null;
 
-            public object this[string propertyName] => BindingSpecial.NotSet;
+            public bool TryChangeSource(object source) { return AcceptsSource(source); }
 
             public UpdateSourceResult Write(string propertyName, object value)
             {
                 throw new UnableToChangeReadOnlyPropertyException("");
             }
+            public object this[string propertyName] => BindingSpecial.NotSet;
 
             public static EmptyAccessor Instance => NotSetPropertyAccessorHolder.SingleIstance;
 

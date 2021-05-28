@@ -221,7 +221,7 @@ namespace iSukces.Binding
         {
             ThrowIfDisposed();
 
-            value = listerInfo.ConvertBack(value);
+            value = listerInfo.ConvertBack(value, _accessor.GetPropertyType(propertyName));
 
             if (value is BindingSpecial special)
             {

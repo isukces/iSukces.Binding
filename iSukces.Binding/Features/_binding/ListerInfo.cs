@@ -18,23 +18,16 @@ namespace iSukces.Binding
         ///     <see cref="IBindingValueConverter">IBindingValueConverter</see>.
         ///     <see cref="IBindingValueConverter.Convert">Convert</see>
         /// </param>
-        /// <param name="sourceType">
-        ///     declared type of source property - used by
-        ///     <see cref="IBindingValueConverter">IBindingValueConverter</see>.
-        ///     <see cref="IBindingValueConverter.ConvertBack">ConvertBack</see>
-        /// </param>
         /// <param name="converter">optional value converter</param>
         /// <param name="converterParameter">optional parameter for value converter</param>
         /// <param name="currentCulture"></param>
         /// <param name="listenerDispatcher"></param>
         public ListerInfo(ListenerDelegate action, Type typeAcceptedByListener,
-            Type sourceType,
             IBindingValueConverter converter,
             object converterParameter, CultureInfo currentCulture,
             Dispatcher listenerDispatcher)
         {
             _action                 = action;
-            _sourceType             = sourceType ?? typeof(object);
             _typeAcceptedByListener = typeAcceptedByListener ?? typeof(object);
             _converter              = converter;
             _converterParameter     = converterParameter;
@@ -58,12 +51,12 @@ namespace iSukces.Binding
             return true;
         }
 
-        public object ConvertBack(object value)
+        public object ConvertBack(object value, Type sourceType)
         {
             if (_converter is null) return value;
             try
             {
-                value = _converter.ConvertBack(value, _sourceType, _converterParameter, _currentCulture);
+                value = _converter.ConvertBack(value, sourceType, _converterParameter, _currentCulture);
             }
             catch
             {
@@ -111,9 +104,7 @@ namespace iSukces.Binding
 
         private readonly CultureInfo _currentCulture;
         private readonly Dispatcher _listenerDispatcher;
-
-        [NotNull] private readonly Type _sourceType;
-
+        
         [NotNull] private readonly Type _typeAcceptedByListener;
     }
 }

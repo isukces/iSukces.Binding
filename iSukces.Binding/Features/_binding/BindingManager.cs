@@ -30,7 +30,8 @@ namespace iSukces.Binding
         public BindingBuilder From<T>(T source, Expression<Func<T, object>> pathExpression)
         {
             var path = ExpressionTools.GetBindingPath(pathExpression);
-            return From(source).WithPath(path);
+            return From(source)
+                .WithPath(path);
         }
 
         public BindingBuilder From(object source)
@@ -45,5 +46,27 @@ namespace iSukces.Binding
         private readonly HashSet<IDisposable> _disposables = new(ReferenceEqualityComparer<IDisposable>.Instance);
 
         private readonly Dictionary<object, BindingValueWrapper> _sources = new(ReferenceEqualityComparer.Instance);
+
+        public B<TSource> GetBuilder<TSource>(TSource source)
+        {
+            return new(source, this);
+        }
+
+        public sealed class B<T>
+        {
+            private readonly T _source;
+            private readonly BindingManager _bindingManager;
+
+            public B(T source, BindingManager bindingManager)
+            {
+                _source              = source;
+                _bindingManager = bindingManager;
+            }
+            
+            public BindingBuilder From(Expression<Func<T, object>> pathExpression)
+            {
+                return _bindingManager.From(_source, pathExpression);
+            }
+        }
     }
 }
