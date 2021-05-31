@@ -37,33 +37,56 @@ namespace iSukces.Binding
 
         private bool Convert(ref object value)
         {
+            void ConvertWithDefault(ref object value2)
+            {
+                value2 = DefaultValueConverter.Instance.Convert(value2, _typeAcceptedByListener, _converterParameter,
+                    _currentCulture);
+            }
+            
             if (_converter is null)
-                return false;
+            {
+                var c = Tools.NeedsConversion(value, _typeAcceptedByListener);
+                if (c is Bla.Acceptable or Bla.Special)
+                    return false;
+                ConvertWithDefault(ref value);
+                return true;
+            }
+
             try
             {
                 value = _converter.Convert(value, _typeAcceptedByListener, _converterParameter, _currentCulture);
+                var c = Tools.NeedsConversion(value, _typeAcceptedByListener);
+                if (c is Bla.Acceptable or Bla.Special)
+                    return true;
             }
+            // ReSharper disable once EmptyGeneralCatchClause
             catch
             {
-                value = BindingSpecial.Invalid;
             }
-
+            ConvertWithDefault(ref value);
             return true;
         }
 
+        
+
         public object ConvertBack(object value, Type sourceType)
         {
-            if (_converter is null) return value;
             try
             {
-                value = _converter.ConvertBack(value, sourceType, _converterParameter, _currentCulture);
+                if (_converter is not null)
+                    value = _converter.ConvertBack(value, sourceType, _converterParameter, _currentCulture);
             }
+            // ReSharper disable once EmptyGeneralCatchClause
             catch
             {
-                value = BindingSpecial.Invalid;
             }
-
-            return value;
+            var c = Tools.NeedsConversion(value, sourceType);
+            if (c is Bla.Acceptable or Bla.Special)
+                return value;
+            value = DefaultValueConverter.Instance.ConvertBack(value, sourceType, _converterParameter,
+                _currentCulture);
+            c     = Tools.NeedsConversion(value, sourceType);
+            return c is Bla.Acceptable or Bla.Special ? value : BindingSpecial.Invalid;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -79,10 +102,7 @@ namespace iSukces.Binding
                 _action(info);
             else
             {
-                void DispatcherMethod()
-                {
-                    _action(info);
-                }
+                void DispatcherMethod() { _action(info); }
 
                 try
                 {
@@ -90,7 +110,6 @@ namespace iSukces.Binding
                 }
                 catch (TaskCanceledException)
                 {
-                    
                 }
                 //_listenerDispatcher.BeginInvoke((Action)DispatcherMethod, DispatcherPriority.Background);
             }
@@ -104,7 +123,7 @@ namespace iSukces.Binding
 
         private readonly CultureInfo _currentCulture;
         private readonly Dispatcher _listenerDispatcher;
-        
+
         [NotNull] private readonly Type _typeAcceptedByListener;
     }
 }

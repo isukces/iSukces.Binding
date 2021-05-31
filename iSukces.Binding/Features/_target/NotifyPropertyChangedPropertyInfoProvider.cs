@@ -6,7 +6,7 @@ namespace iSukces.Binding
 {
     public sealed class NotifyPropertyChangedPropertyInfoProvider : IPropertyInfoProvider
     {
-        public IPropertyInfo GetForProperty(Type type, string propertyName)
+        public IPropertyInfo GetForProperty(Type type, string propertyName, UpdateSourceTrigger trigger)
         {
             var p        = type.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
             var features = BindingFeatures.None;

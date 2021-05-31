@@ -13,7 +13,7 @@ namespace iSukces.Binding
             RegisterProvider(new NotifyPropertyChangedPropertyInfoProvider());
         }
 
-        public IPropertyInfo FindProvider(Type type, string propertyName)
+        public IPropertyInfo FindProvider(Type type, string propertyName, UpdateSourceTrigger trigger)
         {
             if (type == null)
                 return new FakePropertyInfo();
@@ -24,7 +24,7 @@ namespace iSukces.Binding
             for (var index = 0; index < _list.Count; index++)
             {
                 var provider  = _list[index];
-                var candidate = provider.GetForProperty(type, propertyName);
+                var candidate = provider.GetForProperty(type, propertyName, trigger);
                 if (candidate is null)
                     continue;
                 if (value is null || candidate.Priority > value.Priority)

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq.Expressions;
 using JetBrains.Annotations;
 
 namespace iSukces.Binding
@@ -19,6 +18,7 @@ namespace iSukces.Binding
                 _src.Mode = mode;
                 return Create(target, propertyName);
             }
+
             internal IDisposable Create<TTarget>([NotNull] TTarget target, string propertyName)
             {
                 if (target == null) throw new ArgumentNullException(nameof(target));
@@ -36,7 +36,7 @@ namespace iSukces.Binding
                         throw new NullReferenceException(message);
                     }
 
-                    propertyInfo = reg.FindProvider(target.GetType(), propertyName);
+                    propertyInfo = reg.FindProvider(target.GetType(), propertyName, _src.UpdateSourceTrigger);
                     if (propertyInfo is null)
                         throw new NotSupportedException(); // !!!!!!!!!!!!!!!!
                 }
@@ -128,6 +128,7 @@ namespace iSukces.Binding
                 _src.Mode = BindingMode.TwoWay;
                 return Create(target, propertyName);
             }
+            
 
             private readonly BindingManager _bindingManager;
 

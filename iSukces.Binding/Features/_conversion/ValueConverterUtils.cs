@@ -70,5 +70,38 @@ namespace iSukces.Binding
 
             return false;
         }
+
+        public static bool TryConvertToInt(object o, out int value)
+        {
+            switch (o)
+            {
+                case int intValue:
+                    value = intValue; return true;
+                case uint uintValue and <= int.MaxValue:
+                    value = (int)uintValue;
+                    return true;
+                case long longValue and >= int.MinValue and <= int.MaxValue:
+                    value = (int)longValue;
+                    return true;
+                case ulong ulongValue and <= int.MaxValue:
+                    value = (int)ulongValue;
+                    return true;
+                case byte byteValue:
+                    value = byteValue;
+                    return true;
+                case sbyte sbyteValue:
+                    value = sbyteValue; 
+                    return true;
+                case short shortValue:
+                    value = shortValue;
+                    return true;
+                case ushort ushortValue:
+                    value = ushortValue;
+                    return true;
+                default:
+                    value = default;
+                    return false;
+            }
+        }
     }
 }

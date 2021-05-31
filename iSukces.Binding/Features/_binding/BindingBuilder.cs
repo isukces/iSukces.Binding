@@ -58,6 +58,11 @@ namespace iSukces.Binding
             return disposable;
         }
 
+        public ITwoWayBinding CreateTwoWayBinding<T>(ListenerDelegate listener)
+        {
+            return new Builder(this).CreateTwoWayBinding(listener, typeof(T));
+        }
+
         private BindingManager GetBindingManager() { return _wrapper.BindingManager; }
 
 
@@ -99,6 +104,8 @@ namespace iSukces.Binding
         public Dispatcher             ListenerDispatcher { get; set; }
         public BindingMode            Mode               { get; set; }
 
+        public UpdateSourceTrigger UpdateSourceTrigger { get; set; }
+
         private readonly BindingValueWrapper _wrapper;
 
 
@@ -113,5 +120,21 @@ namespace iSukces.Binding
 
             public IDisposable MainDisposing { get; set; }
         }
+    }
+
+    [Flags]
+    public enum UpdateSourceTriggerFlags
+    {
+        None,
+        PropertyChanged = 1,
+        LostFocus = 2,
+        Any = 3
+    }
+
+    public enum UpdateSourceTrigger
+    {
+        Default,
+        PropertyChanged,
+        LostFocus
     }
 }

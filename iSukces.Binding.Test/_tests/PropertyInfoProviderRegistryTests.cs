@@ -17,7 +17,7 @@ namespace iSukces.Binding.Test
             var testing = new TestingTool(_testOutputHelper);
             testing.bm.PropertyInfoProviderRegistry = new SimplePropertyInfoProviderRegistry(true);
 
-            var info = testing.bm.PropertyInfoProviderRegistry.FindProvider(null, "Doesn't matter");
+            var info = testing.bm.PropertyInfoProviderRegistry.FindProvider(null, "Doesn't matter", UpdateSourceTrigger.Default);
             Assert.NotNull(info);
             Assert.Equal(BindingFeatures.None, info.Features);
         }
@@ -28,7 +28,7 @@ namespace iSukces.Binding.Test
             var testing = new TestingTool(_testOutputHelper);
             testing.bm.PropertyInfoProviderRegistry = new SimplePropertyInfoProviderRegistry(true);
 
-            var info = testing.bm.PropertyInfoProviderRegistry.FindProvider(typeof(Dummy), "ThisPropertyDoesntExist");
+            var info = testing.bm.PropertyInfoProviderRegistry.FindProvider(typeof(Dummy), "ThisPropertyDoesntExist", UpdateSourceTrigger.Default);
             Assert.NotNull(info);
             Assert.Equal(BindingFeatures.None, info.Features);
         }
@@ -39,7 +39,7 @@ namespace iSukces.Binding.Test
             var testing = new TestingTool(_testOutputHelper);
             testing.bm.PropertyInfoProviderRegistry = new SimplePropertyInfoProviderRegistry(true);
 
-            var info = testing.bm.PropertyInfoProviderRegistry.FindProvider(typeof(Dummy), nameof(Dummy.Name));
+            var info = testing.bm.PropertyInfoProviderRegistry.FindProvider(typeof(Dummy), nameof(Dummy.Name), UpdateSourceTrigger.Default);
             Assert.NotNull(info);
             Assert.Equal(BindingFeatures.None, info.Features);
         }
@@ -50,7 +50,7 @@ namespace iSukces.Binding.Test
             var testing = new TestingTool(_testOutputHelper);
             testing.bm.PropertyInfoProviderRegistry = new SimplePropertyInfoProviderRegistry(true);
 
-            var info = testing.bm.PropertyInfoProviderRegistry.FindProvider(typeof(SimpleNpc), nameof(SimpleNpc.Name));
+            var info = testing.bm.PropertyInfoProviderRegistry.FindProvider(typeof(SimpleNpc), nameof(SimpleNpc.Name), UpdateSourceTrigger.Default);
             Assert.NotNull(info);
             Assert.Equal(BindingFeatures.OnPropertyChanged, info.Features);
         }

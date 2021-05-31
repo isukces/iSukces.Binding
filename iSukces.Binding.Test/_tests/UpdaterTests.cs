@@ -14,7 +14,7 @@ namespace iSukces.Binding.Test
         {
             var testing = new TestingTool(_testOutputHelper);
             testing.bm.PropertyInfoProviderRegistry = new SimplePropertyInfoProviderRegistry(true);
-            var info = testing.bm.PropertyInfoProviderRegistry.FindProvider(null, "Doesn't matter");
+            var info = testing.bm.PropertyInfoProviderRegistry.FindProvider(null, "Doesn't matter", UpdateSourceTrigger.Default);
             var u    = info.Create(null);
             Assert.Equal(BindingFeatures.None, info.Features);
             Assert.Null(u.PropertyType);
@@ -31,7 +31,7 @@ namespace iSukces.Binding.Test
 
             var dummy = new Dummy();
 
-            var info = testing.bm.PropertyInfoProviderRegistry.FindProvider(dummy.GetType(), nameof(dummy.Name));
+            var info = testing.bm.PropertyInfoProviderRegistry.FindProvider(dummy.GetType(), nameof(dummy.Name), UpdateSourceTrigger.Default);
             var u    = info.Create(dummy);
             Assert.Equal(BindingFeatures.None, info.Features);
             Assert.Equal(typeof(string), u.PropertyType);

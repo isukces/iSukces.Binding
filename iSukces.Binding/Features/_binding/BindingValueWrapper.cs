@@ -224,8 +224,10 @@ namespace iSukces.Binding
             if (listerInfo != null)
                 value = listerInfo.ConvertBack(value, _accessor.GetPropertyType(propertyName));
 
-            if (value is BindingSpecial )
+            if (value is BindingSpecial s)
             {
+                if (s==BindingSpecial.Invalid)
+                    return UpdateSourceResult.InvalidValue;
                 return UpdateSourceResult.Special;
             }
 

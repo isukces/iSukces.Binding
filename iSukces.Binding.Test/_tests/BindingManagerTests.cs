@@ -61,7 +61,9 @@ Got value EndBinding: 'Unbound', last valid 'new Value'
             var testing = new TestingTool(_testOutputHelper);
 
             var data    = new SimpleNpc(testing.log, "Obj") {IntNumber = 99};
-            var binding = testing.bm.From(data, q => q.IntNumber);
+            var binding = testing.bm
+                .From(data, q => q.IntNumber)
+                .WithMode(BindingMode.TwoWay);
             Assert.False(data.HasPropertyChangedSubscribers);
 
             var updater = binding.CreateTwoWayBinding<int>(info =>
@@ -204,7 +206,7 @@ Got value UpdateSource: '{expected2}'
             {
                 if (info.Value is not BindingSpecial)
                 {
-                    Assert.True(info.Value is decimal);
+                    Assert.True(info.Value is  string);
                 }
 
                 testing.Listen(info);
