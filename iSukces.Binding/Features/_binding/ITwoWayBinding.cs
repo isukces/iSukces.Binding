@@ -7,20 +7,12 @@ namespace iSukces.Binding
         UpdateSourceResult UpdateSource(object value);
     }
 
-    internal sealed class TwoWayBinding : DisposableBase, ITwoWayBinding
+    internal class TwoWayBinding : DisposableBaseWithResources, ITwoWayBinding
     {
-        public TwoWayBinding(Action disposeAction, Func<object, UpdateSourceResult> setValueAction)
-            : base(DisposingStateBehaviour.None)
+        public TwoWayBinding(IDisposable usedResources, Func<object, UpdateSourceResult> setValueAction)
+            : base(usedResources)
         {
-            _disposeAction  = disposeAction;
             _setValueAction = setValueAction;
-        }
-
-        protected override void DisposeInternal(bool disposing)
-        {
-            _disposeAction?.Invoke();
-            _disposeAction = null;
-            base.DisposeInternal(disposing);
         }
 
         public UpdateSourceResult UpdateSource(object value)
@@ -38,6 +30,5 @@ namespace iSukces.Binding
         }
 
         private readonly Func<object, UpdateSourceResult> _setValueAction;
-        private Action _disposeAction;
     }
 }

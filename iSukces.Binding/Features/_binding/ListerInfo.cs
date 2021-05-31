@@ -88,7 +88,7 @@ namespace iSukces.Binding
                 {
                     _listenerDispatcher.Invoke(DispatcherMethod);
                 }
-                catch (TaskCanceledException exception)
+                catch (TaskCanceledException)
                 {
                     
                 }

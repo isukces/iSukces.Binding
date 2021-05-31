@@ -2,9 +2,9 @@ using System;
 
 namespace iSukces.Binding
 {
-    internal partial class PropertyAccessorMaker
+    internal partial class ObjectAccessorMaker
     {
-        private sealed class Unbound : IPropertyAccessor
+        private sealed class Unbound : IObjectAccessor
         {
             private Unbound() { }
 
@@ -22,7 +22,7 @@ namespace iSukces.Binding
                 throw new UnableToChangeReadOnlyPropertyException("");
             }
 
-            public object this[string propertyName] => BindingSpecial.Unbound;
+            public object Read(string propertyName) => BindingSpecial.Unbound;
 
             public static Unbound Instance => UnboundHolder.SingleIstance;
 

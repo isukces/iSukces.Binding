@@ -2,10 +2,10 @@
 
 namespace iSukces.Binding
 {
-    internal static partial class PropertyAccessorMaker
+    internal static partial class ObjectAccessorMaker
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void SureAccessor(object source, ref IPropertyAccessor accessor)
+        public static void SureAccessor(object source, ref IObjectAccessor accessor)
         {
             if (accessor is not null)
                 return;

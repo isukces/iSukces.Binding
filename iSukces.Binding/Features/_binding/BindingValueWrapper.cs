@@ -128,7 +128,7 @@ namespace iSukces.Binding
                 return BindingSpecial.NotSet;
 
             SureAccessor();
-            return _accessor[propertyName];
+            return _accessor.Read(propertyName);
         }
 
         private void PropertyChangedEventsListeningBegin()
@@ -169,7 +169,7 @@ namespace iSukces.Binding
             if (_properties.TryGetValue(key, out var value))
             {
                 SureAccessor();
-                var propertyValue = _accessor[key];
+                var propertyValue = _accessor.Read(key);
                 value.Source = propertyValue;
             }
         }
@@ -179,7 +179,7 @@ namespace iSukces.Binding
         {
             if (_accessor is not null)
                 return;
-            PropertyAccessorMaker.SureAccessor(_source, ref _accessor);
+            ObjectAccessorMaker.SureAccessor(_source, ref _accessor);
         }
 
         internal UpdateSourceResult UpdateSource(object value, ListerInfo listerInfo)
@@ -220,15 +220,16 @@ namespace iSukces.Binding
         private UpdateSourceResult UpdateSource(string propertyName, object value, ListerInfo listerInfo)
         {
             ThrowIfDisposed();
+            SureAccessor();
+            if (listerInfo != null)
+                value = listerInfo.ConvertBack(value, _accessor.GetPropertyType(propertyName));
 
-            value = listerInfo.ConvertBack(value, _accessor.GetPropertyType(propertyName));
-
-            if (value is BindingSpecial special)
+            if (value is BindingSpecial )
             {
                 return UpdateSourceResult.Special;
             }
 
-            SureAccessor();
+            
             try
             {
                 var result = _accessor.Write(propertyName, value);
@@ -262,7 +263,7 @@ namespace iSukces.Binding
                 SureAccessor();
                 foreach (var pair in _properties)
                 {
-                    var propertyValue = _accessor[pair.Key];
+                    var propertyValue = _accessor.Read(pair.Key);
                     pair.Value.Source = propertyValue;
                 }
 
@@ -282,7 +283,7 @@ namespace iSukces.Binding
 
         private readonly List<ListerInfo> _listeners = new();
         private readonly Dictionary<string, BindingValueWrapper> _properties = new();
-        private IPropertyAccessor _accessor;
+        private IObjectAccessor _accessor;
 
         private ValuePropagationFlags _flags;
         private bool _isListening;

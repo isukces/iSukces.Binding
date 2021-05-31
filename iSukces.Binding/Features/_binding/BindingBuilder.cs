@@ -1,70 +1,65 @@
 ﻿using System;
 using System.Globalization;
+using System.Linq.Expressions;
 using System.Windows.Threading;
 using JetBrains.Annotations;
 
 namespace iSukces.Binding
 {
-    public class BindingBuilder
+    public partial class BindingBuilder
     {
         internal BindingBuilder(BindingValueWrapper wrapper) { _wrapper = wrapper; }
 
 
+        public IDisposable BindTo<TTarget>(TTarget target,
+            Expression<Func<TTarget, object>> propertyExpression)
+        {
+            string propertyName = ExpressionTools.GetBindingPath(propertyExpression);
+            return new Builder(this).Create(target, propertyName);
+        }
+
+        public IDisposable BindTo<TTarget>(TTarget target,
+            Expression<Func<TTarget, object>> propertyExpression, BindingMode mode)
+        {
+            var propertyName = ExpressionTools.GetBindingPath(propertyExpression);
+            return new Builder(this).Create(target, propertyName, mode);
+        }
+
+        public IDisposable BindTo<TTarget>(TTarget target, string propertyName)
+        {
+            return new Builder(this).Create(target, propertyName);
+        }
+
+        public IDisposable BindToOneWay<TTarget>(TTarget target,
+            Expression<Func<TTarget, object>> propertyExpression)
+        {
+            Mode = BindingMode.OneWay;
+            var propertyName = ExpressionTools.GetBindingPath(propertyExpression);
+            return new Builder(this).Create(target, propertyName);
+        }
+
+        public IDisposable BindToTwoWay<TTarget>(TTarget target,
+            Expression<Func<TTarget, object>> propertyExpression)
+        {
+            Mode = BindingMode.TwoWay;
+            var propertyName = ExpressionTools.GetBindingPath(propertyExpression);
+            return new Builder(this).Create(target, propertyName);
+        }
+
+
         public IDisposable CreateListener(ListenerDelegate listener)
         {
-            return CreateListener(listener, ListerInfo.DoesntMatter);
+            return new Builder(this).CreateListener(listener, ListerInfo.DoesntMatter, null);
         }
-        
+
         public IDisposable CreateListener(ListenerDelegate listener, Type typeAcceptedByListener)
         {
-            var disposables = CreateListener(listener, typeAcceptedByListener, null);
-            return disposables.MainDisposing;
+            var disposable = new Builder(this).CreateListener(listener, typeAcceptedByListener, null);
+            return disposable;
         }
 
-        private DisposableHolder CreateListener(ListenerDelegate listener,
-            Type typeAcceptedByListener,
-            Func<Action, ListerInfo, BindingValueWrapper, IDisposable> factory)
-        {
-            var disposables = new DisposableHolder();
-            var wrapper     = _wrapper.CreateAccessor(Path);
-            var info = new ListerInfo(listener, typeAcceptedByListener, Converter, ConverterParameter,
-                CultureInfo, ListenerDispatcher);
-            disposables.RemoveFromListerer = wrapper.AddListenerAction(info);
+        private BindingManager GetBindingManager() { return _wrapper.BindingManager; }
 
-            void DisposableAction()
-            {
-                if (disposables.MainDisposing is null)
-                    return;
-                _wrapper.BindingManager.RemoveDisposable(disposables.MainDisposing);
-                disposables.RemoveFromListerer?.Dispose();
-            }
-
-            if (factory is null)
-                disposables.MainDisposing = new DisposableAction(DisposableAction);
-            else
-                disposables.MainDisposing = factory(DisposableAction, info, wrapper);
-            _wrapper.BindingManager.AddDisposable(disposables.MainDisposing);
-            return disposables;
-        }
-        
-
-        public ITwoWayBinding CreateTwoWayBinding<TListener>(ListenerDelegate listener)
-        {
-            return CreateTwoWayBinding(listener, typeof(TListener));
-        }
-
-        public ITwoWayBinding CreateTwoWayBinding(ListenerDelegate listener, Type typeAcceptedByListener)
-        {
-            var disposables = CreateListener(listener, typeAcceptedByListener, (action, info, wrapper) =>
-            {
-                var result = new TwoWayBinding(action, obj =>
-                {
-                    return wrapper.UpdateSource(obj, info);
-                });
-                return result;
-            });
-            return (ITwoWayBinding)disposables.MainDisposing;
-        }
 
         public BindingBuilder WithConverter(IBindingValueConverter converter)
         {
@@ -85,18 +80,24 @@ namespace iSukces.Binding
             return this;
         }
 
+        public BindingBuilder WithMode(BindingMode mode)
+        {
+            Mode = mode;
+            return this;
+        }
+
         public BindingBuilder WithPath(string path)
         {
             Path = path;
             return this;
         }
 
-
         public string                 Path               { get; set; }
         public IBindingValueConverter Converter          { get; set; }
         public object                 ConverterParameter { get; set; }
         public CultureInfo            CultureInfo        { get; set; }
         public Dispatcher             ListenerDispatcher { get; set; }
+        public BindingMode            Mode               { get; set; }
 
         private readonly BindingValueWrapper _wrapper;
 

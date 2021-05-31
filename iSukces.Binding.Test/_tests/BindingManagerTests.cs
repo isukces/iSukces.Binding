@@ -17,7 +17,7 @@ namespace iSukces.Binding.Test
         [InlineData("dispose binding manager")]
         public void T01_Should_bind_change_and_dispose(string testNumber)
         {
-            var testing = new Testing(_testOutputHelper);
+            var testing = new TestingTool(_testOutputHelper);
 
             var data = new SimpleNpc(testing.log, "Obj");
             data.Title = "initial value";
@@ -58,7 +58,7 @@ Got value EndBinding: 'Unbound', last valid 'new Value'
         [Fact]
         public void T02_Should_update_source()
         {
-            var testing = new Testing(_testOutputHelper);
+            var testing = new TestingTool(_testOutputHelper);
 
             var data    = new SimpleNpc(testing.log, "Obj") {IntNumber = 99};
             var binding = testing.bm.From(data, q => q.IntNumber);
@@ -92,7 +92,7 @@ Got value UpdateSource: '27'
         [Fact]
         public void T03_Should_not_update_invalid_value()
         {
-            var testing = new Testing(_testOutputHelper);
+            var testing = new TestingTool(_testOutputHelper);
 
             var data    = new SimpleNpc(testing.log, "Obj") {IntNumber = 99};
             var binding = testing.bm.From(data, q => q.IntNumber);
@@ -119,14 +119,14 @@ Got value ValueChanged: '13'
         [Fact]
         public void T04_Should_update_value_with_conversion()
         {
-            var testing = new Testing(_testOutputHelper);
+            var testing = new TestingTool(_testOutputHelper);
 
             var data    = new SimpleNpc(testing.log, "Obj") {IntNumber = 99};
             var binding = testing.bm.From(data, q => q.IntNumber);
             binding.Converter = NumberValueConverter.Instance;
             Assert.False(data.HasPropertyChangedSubscribers);
 
-            var updater = binding.CreateTwoWayBinding<int, string>(info =>
+            var updater = binding.CreateTwoWayBinding<string>(info =>
             {
                 if (info.Value is not BindingSpecial)
                     Assert.True(info.Value is null or string);
@@ -159,7 +159,7 @@ Got value UpdateSource: '27'
         public void T05_Should_update_value_with_conversion_and_culture(string culture, string expected1,
             string expected2)
         {
-            var testing = new Testing(_testOutputHelper);
+            var testing = new TestingTool(_testOutputHelper);
 
             var data    = new SimpleNpc(testing.log, "Obj") {DecimalNumber = 99.45m};
             var binding = testing.bm.From(data, q => q.DecimalNumber);
@@ -168,7 +168,7 @@ Got value UpdateSource: '27'
             binding.ConverterParameter = "c2";
             Assert.False(data.HasPropertyChangedSubscribers);
 
-            var updater = binding.CreateTwoWayBinding<decimal, string>(info =>
+            var updater = binding.CreateTwoWayBinding<string>(info =>
             {
                 if (info.Value is not BindingSpecial)
                     Assert.True(info.Value is null or string);
@@ -194,13 +194,13 @@ Got value UpdateSource: '{expected2}'
         [Fact]
         public void T06_Should_catch_update_source_exception()
         {
-            var testing = new Testing(_testOutputHelper);
+            var testing = new TestingTool(_testOutputHelper);
 
             var data    = new SimpleNpc(testing.log, "Obj") {DecimalNumber = 99.45m};
             var binding = testing.bm.From(data, q => q.DecimalNumber);
             Assert.False(data.HasPropertyChangedSubscribers);
 
-            var updater = binding.CreateTwoWayBinding<decimal, string>(info =>
+            var updater = binding.CreateTwoWayBinding<string>(info =>
             {
                 if (info.Value is not BindingSpecial)
                 {
@@ -229,7 +229,7 @@ Got value EndBinding: 'Unbound', last valid '99,45'
         [Fact]
         public void T07_Should_update_listener_with_dispatcher()
         {
-            var testing = new Testing(_testOutputHelper);
+            var testing = new TestingTool(_testOutputHelper);
 
             var data = new SimpleNpc(testing.log, "Obj") {DecimalNumber = 99.45m};
             var builder = testing.bm
@@ -329,28 +329,5 @@ ListenerDispatcher.InvokeShutdown
         }
 
         private readonly ITestOutputHelper _testOutputHelper;
-
-
-        class Testing
-        {
-            public Testing(ITestOutputHelper testOutput) { log = new TestingLogger(testOutput); }
-
-            public string GetLog() { return log.ToString().Trim(); }
-
-            public void Listen(IValueInfo info)
-            {
-                if (info.Value is BindingSpecial)
-                    log.WriteLine($"Got value {info.Kind}: '{info.Value}', last valid '{info.LastValidValue}'");
-                else
-                    log.WriteLine($"Got value {info.Kind}: '{info.Value}'");
-                changessCount++;
-            }
-
-            public void WriteLine(string text) { log.WriteLine(text); }
-
-            public readonly BindingManager bm = new BindingManager();
-            public readonly ITestingLogger log;
-            public int changessCount;
-        }
     }
 }

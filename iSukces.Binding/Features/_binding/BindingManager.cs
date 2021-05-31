@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Windows.Threading;
 
 namespace iSukces.Binding
 {
@@ -41,32 +42,17 @@ namespace iSukces.Binding
             return new BindingBuilder(wrapper);
         }
 
+        public BindingBuilder<TSource> GetBuilder<TSource>(TSource source) { return new(source, this); }
+
         public void RemoveDisposable(IDisposable disposable) { _disposables.Remove(disposable); }
+
+        public IPropertyInfoProviderRegistry PropertyInfoProviderRegistry { get; set; }
 
         private readonly HashSet<IDisposable> _disposables = new(ReferenceEqualityComparer<IDisposable>.Instance);
 
         private readonly Dictionary<object, BindingValueWrapper> _sources = new(ReferenceEqualityComparer.Instance);
 
-        public B<TSource> GetBuilder<TSource>(TSource source)
-        {
-            return new(source, this);
-        }
-
-        public sealed class B<T>
-        {
-            private readonly T _source;
-            private readonly BindingManager _bindingManager;
-
-            public B(T source, BindingManager bindingManager)
-            {
-                _source              = source;
-                _bindingManager = bindingManager;
-            }
-            
-            public BindingBuilder From(Expression<Func<T, object>> pathExpression)
-            {
-                return _bindingManager.From(_source, pathExpression);
-            }
-        }
+       
     }
+     
 }

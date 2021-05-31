@@ -14,19 +14,29 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Update="Features\_dataAccess\PropertyAccessorMaker.EmptyAccessor.cs">
+      <Compile Update="Features\_dataAccess\ObjectAccessorMaker.EmptyAccessor.cs">
         <DependentUpon>PropertyAccessorMaker.cs</DependentUpon>
       </Compile>
-      <Compile Update="Features\_dataAccess\PropertyAccessorMaker.ReflectionAccessor.cs">
+      <Compile Update="Features\_dataAccess\ObjectAccessorMaker.ReflectionAccessor.cs">
         <DependentUpon>PropertyAccessorMaker.cs</DependentUpon>
       </Compile>
-      <Compile Update="Features\_dataAccess\PropertyAccessorMaker.Unbound.cs">
+      <Compile Update="Features\_dataAccess\ObjectAccessorMaker.Unbound.cs">
         <DependentUpon>PropertyAccessorMaker.cs</DependentUpon>
+      </Compile>
+      <Compile Update="Features\_binding\BindingBuilder.Builder.cs">
+        <DependentUpon>BindingBuilder.cs</DependentUpon>
+      </Compile>
+      <Compile Update="Features\_binding\BindingBuilder`1.cs">
+        <DependentUpon>BindingBuilder.cs</DependentUpon>
       </Compile>
     </ItemGroup>
 
     <ItemGroup>
       <Reference Include="WindowsBase" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Features\_list" />
     </ItemGroup>
 
 </Project>

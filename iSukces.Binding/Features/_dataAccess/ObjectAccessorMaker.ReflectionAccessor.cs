@@ -4,9 +4,9 @@ using System.Reflection;
 
 namespace iSukces.Binding
 {
-    internal partial class PropertyAccessorMaker
+    internal partial class ObjectAccessorMaker
     {
-        internal class ReflectionAccessor : IPropertyAccessor
+        internal class ReflectionAccessor : IObjectAccessor
         {
             public ReflectionAccessor(object source)
             {
@@ -22,8 +22,18 @@ namespace iSukces.Binding
                 return propertyInfo?.PropertyType;
             }
 
+            public object Read(string propertyName)
+            {
+                var propertyInfo = SurePropertyInfo(propertyName);
+                if (propertyInfo is null)
+                    return BindingSpecial.NotSet;
+                return propertyInfo.GetValue(_source);
+            }
+
             private PropertyInfo SurePropertyInfo(string propertyName)
             {
+                if (_type is null)
+                    return null;
                 if (!_byProperty.TryGetValue(propertyName, out var propertyInfo))
                 {
                     _byProperty[propertyName] = propertyInfo =
@@ -57,51 +67,12 @@ namespace iSukces.Binding
 
             public UpdateSourceResult Write(string propertyName, object value)
             {
-                if (_type is null)
-                    return UpdateSourceResult.NotSet;
-                if (!_byProperty.TryGetValue(propertyName, out var pi))
-                    return UpdateSourceResult.NotSet;
-                if (!pi.CanWrite) throw new UnableToChangeReadOnlyPropertyException("");
-
-                if (value is null)
-                {
-                    if (pi.PropertyType.IsClass)
-                    {
-                        pi.SetValue(_source, value);
-                        return UpdateSourceResult.Ok;
-                    }
-
-                    return UpdateSourceResult.InvalidValue;
-                }
-
-                var valueType = value.GetType();
-                if (pi.PropertyType.IsAssignableFrom(valueType))
-                {
-                    pi.SetValue(_source, value);
-                    return UpdateSourceResult.Ok;
-                }
-
-                return UpdateSourceResult.InvalidValue;
-            }
-
-            public object this[string propertyName]
-            {
-                get
-                {
-                    if (_type is null)
-                        return BindingSpecial.NotSet;
-                    var propertyInfo = SurePropertyInfo(propertyName);
-
-                    if (propertyInfo is null)
-                        return BindingSpecial.NotSet;
-                    return propertyInfo.GetValue(_source);
-                }
-                set => throw new NotImplementedException();
+                var propertyInfo = SurePropertyInfo(propertyName);
+                return Tools.PropertySetValue(propertyInfo, _source, value);
             }
 
             private readonly Dictionary<string, PropertyInfo> _byProperty = new();
             private object _source;
-
             private Type _type;
         }
     }

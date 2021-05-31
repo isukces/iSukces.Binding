@@ -30,7 +30,10 @@ namespace iSukces.Binding
 
         public new bool Equals(object x, object y) { return ReferenceEquals(x, y); }
 
-        public int GetHashCode(object obj) { return obj == null ? 0 : RuntimeHelpers.GetHashCode(obj); }
+        public int GetHashCode(object obj)
+        {
+            return RuntimeHelpers.GetHashCode(obj);
+        }
 
         public override string ToString() { return "nonGeneric " + nameof(ReferenceEqualityComparer); }
 

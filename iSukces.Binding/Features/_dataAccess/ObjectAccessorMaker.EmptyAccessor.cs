@@ -2,9 +2,9 @@
 
 namespace iSukces.Binding
 {
-    internal partial class PropertyAccessorMaker
+    internal partial class ObjectAccessorMaker
     {
-        private sealed class EmptyAccessor : IPropertyAccessor
+        private sealed class EmptyAccessor : IObjectAccessor
         {
             private EmptyAccessor() { }
 
@@ -27,7 +27,8 @@ namespace iSukces.Binding
             {
                 throw new UnableToChangeReadOnlyPropertyException("");
             }
-            public object this[string propertyName] => BindingSpecial.NotSet;
+
+            public object Read(string propertyName) => BindingSpecial.NotSet;
 
             public static EmptyAccessor Instance => NotSetPropertyAccessorHolder.SingleIstance;
 
