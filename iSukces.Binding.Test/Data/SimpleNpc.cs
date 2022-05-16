@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Text;
 
 namespace iSukces.Binding.Test.Data
@@ -23,8 +24,11 @@ namespace iSukces.Binding.Test.Data
             {
                 if (value < 0)
                     throw new ArgumentException("value cannot be negative");
+                if (value > 1000)
+                    value = 1000;
                 // silent modification
-                _decimalNumber = Math.Round(_decimalNumber, 2);
+                value = Math.Round(value, 2);
+                //_decimalNumber = Math.Round(_decimalNumber, 2);
                 SetAndNotify(ref _decimalNumber, value);
             }
         }

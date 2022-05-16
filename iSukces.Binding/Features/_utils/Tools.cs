@@ -33,7 +33,15 @@ namespace iSukces.Binding
             if (cat == ValueConversionStatus.Acceptable)
             {
                 pi.SetValue(obj, value);
-                return UpdateSourceResult.Ok;
+                try
+                {
+                    var readed = pi.GetValue(obj);
+                    return UpdateSourceResult.OkFromValue(readed);
+                }
+                catch
+                {
+                    return UpdateSourceResult.OkUnableToReadBack;
+                }
             }
             return UpdateSourceResult.InvalidValue;
         }

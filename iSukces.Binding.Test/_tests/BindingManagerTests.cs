@@ -11,7 +11,10 @@ namespace iSukces.Binding.Test
 {
     public class BindingManagerTests
     {
-        public BindingManagerTests(ITestOutputHelper testOutputHelper) { _testOutputHelper = testOutputHelper; }
+        public BindingManagerTests(ITestOutputHelper testOutputHelper)
+        {
+            _testOutputHelper = testOutputHelper;
+        }
 
         [Theory]
         [InlineData("dispose listener")]
@@ -61,7 +64,7 @@ Got value EndBinding: 'Unbound', last valid 'new Value'
         {
             var testing = new TestingTool(_testOutputHelper);
 
-            var data    = new SimpleNpc(testing.log, "Obj") {IntNumber = 99};
+            var data = new SimpleNpc(testing.log, "Obj") { IntNumber = 99 };
             var binding = testing.bm
                 .From(data, q => q.IntNumber)
                 .WithMode(BindingMode.TwoWay);
@@ -97,7 +100,7 @@ Got value UpdateSource: '27'
         {
             var testing = new TestingTool(_testOutputHelper);
 
-            var data    = new SimpleNpc(testing.log, "Obj") {IntNumber = 99};
+            var data    = new SimpleNpc(testing.log, "Obj") { IntNumber = 99 };
             var binding = testing.bm.From(data, q => q.IntNumber);
             Assert.False(data.HasPropertyChangedSubscribers);
 
@@ -125,7 +128,7 @@ Got value ValueChanged: '13'
         {
             var testing = new TestingTool(_testOutputHelper);
 
-            var data    = new SimpleNpc(testing.log, "Obj") {IntNumber = 99};
+            var data    = new SimpleNpc(testing.log, "Obj") { IntNumber = 99 };
             var binding = testing.bm.From(data, q => q.IntNumber);
             binding.Converter = NumberValueConverter.Instance;
             Assert.False(data.HasPropertyChangedSubscribers);
@@ -140,7 +143,7 @@ Got value ValueChanged: '13'
 
             data.IntNumber = 13;
             var updateResult = updater.UpdateSource("27");
-            Assert.Equal(UpdateSourceResult.Ok, updateResult);
+            Assert.Equal(UpdateSourceResultStatus.Ok, updateResult.Status);
             Assert.Equal(27, data.IntNumber);
 
             Assert.Equal(3, testing.changessCount);
@@ -165,7 +168,7 @@ Got value UpdateSource: '27'
         {
             var testing = new TestingTool(_testOutputHelper);
 
-            var data    = new SimpleNpc(testing.log, "Obj") {DecimalNumber = 99.45m};
+            var data    = new SimpleNpc(testing.log, "Obj") { DecimalNumber = 99.45m };
             var binding = testing.bm.From(data, q => q.DecimalNumber);
             binding.Converter          = NumberValueConverter.Instance;
             binding.CultureInfo        = CultureInfo.GetCultureInfo(culture);
@@ -182,7 +185,7 @@ Got value UpdateSource: '27'
 
             var stringNumber = 27.44.ToString(binding.CultureInfo);
             var updateResult = updater.UpdateSource(stringNumber);
-            Assert.Equal(UpdateSourceResult.Ok, updateResult);
+            Assert.Equal(UpdateSourceResultStatus.Ok, updateResult.Status);
             Assert.Equal(27.44m, data.DecimalNumber);
 
             Assert.Equal(2, testing.changessCount);
@@ -200,7 +203,7 @@ Got value UpdateSource: '{expected2}'
         {
             var testing = new TestingTool(_testOutputHelper);
 
-            var data    = new SimpleNpc(testing.log, "Obj") {DecimalNumber = 99.45m};
+            var data    = new SimpleNpc(testing.log, "Obj") { DecimalNumber = 99.45m };
             var binding = testing.bm.From(data, q => q.DecimalNumber);
             Assert.False(data.HasPropertyChangedSubscribers);
 
@@ -208,7 +211,7 @@ Got value UpdateSource: '{expected2}'
             {
                 if (info.Value is not BindingSpecial)
                 {
-                    Assert.True(info.Value is  string);
+                    Assert.True(info.Value is string);
                 }
 
                 testing.Listen(info);
@@ -235,7 +238,7 @@ Got value EndBinding: 'Unbound', last valid '99,45'
         {
             var testing = new TestingTool(_testOutputHelper);
 
-            var data = new SimpleNpc(testing.log, "Obj") {DecimalNumber = 99.45m};
+            var data = new SimpleNpc(testing.log, "Obj") { DecimalNumber = 99.45m };
             var builder = testing.bm
                 .From(data, q => q.DecimalNumber);
 
@@ -254,7 +257,7 @@ Got value EndBinding: 'Unbound', last valid '99,45'
                 Dispatcher.Run();
                 listenerThreadFinished.Set();
                 testing.WriteLine("Listener thread finished");
-            }) {IsBackground = true};
+            }) { IsBackground = true };
             var dataThread = new Thread(() =>
             {
                 _testOutputHelper.WriteLine("Data thread id=" + Thread.CurrentThread.ManagedThreadId);
@@ -295,7 +298,7 @@ Got value EndBinding: 'Unbound', last valid '99,45'
 
                 dataTheadFinished.Set();
                 testing.WriteLine("Data thread finished");
-            }) {IsBackground = true};
+            }) { IsBackground = true };
             dataThread.Start();
             listenerThread.Start();
 
@@ -332,6 +335,81 @@ ListenerDispatcher.InvokeShutdown
             listenerThreadFinished.Wait();
         }
 
+        [Fact]
+        public void T08_Should_update_with_back_reading()
+        {
+            var testing = new TestingTool(_testOutputHelper);
+
+            var data    = new SimpleNpc(testing.log, "Obj") { DecimalNumber = 99.451m };
+            Assert.Equal(99.45m, data.DecimalNumber);
+            var binding = testing.bm.From(data, q => q.DecimalNumber);
+            Assert.False(data.HasPropertyChangedSubscribers);
+
+            var updater = binding.CreateTwoWayBinding<string>(info =>
+            {
+                if (info.Value is not BindingSpecial)
+                {
+                    Assert.True(info.Value is string);
+                }
+
+                testing.Listen(info);
+            });
+
+            var updateResult = updater.UpdateSource(99.449m);
+            Assert.Null(updateResult.Exception);
+            Assert.Equal(99.45m, data.DecimalNumber);
+            Assert.Equal(2, testing.changessCount);
+            testing.bm.Dispose();
+            const string expected = @"
+[Obj] Subscribe PropertyChanged
+Got value StartBinding: '99,45'
+Got value UpdateSource: '99,45'
+Got value EndBinding: 'Unbound', last valid '99,45'
+[Obj] Unubscribe PropertyChanged
+";
+            var log1 = testing.GetLog();
+            Assert.Equal(expected.Trim(), log1);
+        }
+        [Fact]
+        public void T09_Should_update_with_back_reading()
+        {
+            var testing = new TestingTool(_testOutputHelper);
+
+            var data    = new SimpleNpc(testing.log, "Obj") { DecimalNumber = 99.451m };
+            Assert.Equal(99.45m, data.DecimalNumber);
+            var binding = testing.bm.From(data, q => q.DecimalNumber);
+            Assert.False(data.HasPropertyChangedSubscribers);
+
+            var updater = binding.CreateTwoWayBinding<string>(info =>
+            {
+                if (info.Value is not BindingSpecial)
+                {
+                    Assert.True(info.Value is string);
+                }
+
+                testing.Listen(info);
+            });
+
+            var updateResult = updater.UpdateSource(1234);
+            Assert.Null(updateResult.Exception);
+            Assert.Equal(1000, data.DecimalNumber);
+            Assert.Equal(2, testing.changessCount);
+            testing.bm.Dispose();
+            const string expected = @"
+[Obj] Subscribe PropertyChanged
+Got value StartBinding: '99,45'
+Got value UpdateSource: '1000'
+Got value EndBinding: 'Unbound', last valid '1000'
+[Obj] Unubscribe PropertyChanged
+";
+            var log1 = testing.GetLog();
+            Assert.Equal(expected.Trim(), log1);
+        }
+
+        #region Fields
+
         private readonly ITestOutputHelper _testOutputHelper;
+
+        #endregion
     }
 }

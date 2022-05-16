@@ -9,7 +9,11 @@ namespace iSukces.Binding
 {
     public interface IBindingValueWrapper
     {
+        #region properties
+
         public object Source { get; }
+
+        #endregion
     }
 
     internal sealed class BindingValueWrapper : DisposableBase, IBindingValueWrapper
@@ -44,14 +48,6 @@ namespace iSukces.Binding
                     Dispose();
                 }
             });
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void InvokeListener(ListerInfo listener, IValueInfo infoEnd)
-        {
-            if (BindingTracker.Instance.LoggingEnabled)
-                BindingTracker.Instance.LogInvokeingListener(this, infoEnd, listener);
-            listener.Invoke(infoEnd);
         }
 
         private PrvValueInfo Create1(ListenerDelegateKind kind)
@@ -112,10 +108,41 @@ namespace iSukces.Binding
                     var lister = _listeners[index];
                     InvokeListener(lister, info);
                 }
+
                 _listeners.Clear();
             }
 
             base.DisposeInternal(disposing);
+        }
+
+        private void ForwardSourceToListeners(bool force)
+        {
+            if (!force && !_forwardSourceToListeners) return;
+            _forwardSourceToListeners = false;
+
+            if (_accessor != null)
+                if (!_accessor.TryChangeSource(_source))
+                    _accessor = null;
+            SureAccessor();
+            if (_properties.Count > 0)
+                foreach (var pair in _properties)
+                {
+                    var propertyValue = _accessor.Read(pair.Key);
+                    pair.Value.Source = propertyValue;
+                }
+
+            if (_listeners.Count > 0)
+            {
+                var kind = ListenerDelegateKind.ValueChanged;
+                if ((_flags & ValuePropagationFlags.UpdateSource) != 0)
+                    kind = ListenerDelegateKind.UpdateSource;
+                var info = Create1(kind);
+                for (var index = 0; index < _listeners.Count; index++)
+                {
+                    var listener = _listeners[index];
+                    InvokeListener(listener, info);
+                }
+            }
         }
 
         private BindingValueWrapper GetOrCreate(string propertyName)
@@ -151,6 +178,14 @@ namespace iSukces.Binding
 
             SureAccessor();
             return _accessor.Read(propertyName);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void InvokeListener(ListerInfo listener, IValueInfo infoEnd)
+        {
+            if (BindingTracker.Instance.LoggingEnabled)
+                BindingTracker.Instance.LogInvokeingListener(this, infoEnd, listener);
+            listener.Invoke(infoEnd);
         }
 
         private void PropertyChangedEventsListeningBegin()
@@ -213,21 +248,46 @@ namespace iSukces.Binding
                 if ((_flags & ValuePropagationFlags.UpdateSource) != 0)
                     return UpdateSourceResult.NotSet;
                 _flags |= ValuePropagationFlags.UpdateSource;
+                _flags &= ~ValuePropagationFlags.SourceSetValueWasInvoked;
                 try
                 {
                     if (_owner is null)
                     {
                         Source = value;
-                        return UpdateSourceResult.Ok;
+                        return UpdateSourceResult.OkFromValue(value);
                     }
 
-                    var ownerResult = _owner.UpdateSource(_ownerPropertyName, value, listerInfo, bindingValidators);
-                    if (ownerResult.Exception != null)
+                    try
                     {
-                        Source = BindingSpecial.Invalid;
-                    }
+                        _flags |= ValuePropagationFlags.OwnerUpdateSource;
+                        var ownerResult = _owner.UpdateSource(_ownerPropertyName, value, listerInfo, bindingValidators);
+                        _flags &= ~ValuePropagationFlags.OwnerUpdateSource;
+                        var wasUpdatedBack = (_flags & ValuePropagationFlags.SourceSetValueWasInvoked) != 0;
+                        if (wasUpdatedBack)
+                        {
+                            _flags &= ~ValuePropagationFlags.SourceSetValueWasInvoked;
+                        }
 
-                    return ownerResult;
+                        if (ownerResult.Exception != null)
+                        {
+                            Source = BindingSpecial.Invalid;
+                            return ownerResult;
+                        }
+
+                        if (ownerResult.Status == UpdateSourceResultStatus.Ok)
+                        {
+                            if (!Equals(value, ownerResult.Value))
+                            {
+                                Source = ownerResult.Value;
+                            }
+                        }
+
+                        return ownerResult;
+                    }
+                    finally
+                    {
+                        ForwardSourceToListeners(false);
+                    }
                 }
                 finally
                 {
@@ -268,7 +328,12 @@ namespace iSukces.Binding
                         return UpdateSourceResult.FromException(exception, value);
                     }
                 }
-                
+
+                /*if (BindingTracker.Instance.LoggingEnabled)
+                {
+                    BindingTracker.Instance.LogSourceChanging(this, value);
+                }*/
+
                 var result = _accessor.Write(propertyName, value);
                 return result;
             }
@@ -278,12 +343,21 @@ namespace iSukces.Binding
             }
         }
 
+        #region properties
+
+        public BindingManager BindingManager { get; }
+
+        #endregion
+
         public object Source
         {
             get => _source;
             private set
             {
                 ThrowIfDisposed();
+                var isUnderOwnerUpdateSource = (_flags & ValuePropagationFlags.OwnerUpdateSource) != 0;
+                if (isUnderOwnerUpdateSource)
+                    _flags |= ValuePropagationFlags.SourceSetValueWasInvoked;
                 if (ReferenceEquals(_source, value))
                     return;
                 if (_isListening && _source is INotifyPropertyChanged oldNpc)
@@ -295,38 +369,24 @@ namespace iSukces.Binding
                     }
                 }
                 _source = value;
+
                 if (value is not BindingSpecial)
-                    _lastValidSource = _source;
-                if (_isListening && _source is INotifyPropertyChanged newNpc)
-                    newNpc.PropertyChanged += SourcePropertyChanged;
-
-                if (_accessor != null)
-                    if (!_accessor.TryChangeSource(_source))
-                        _accessor = null;
-                SureAccessor();
-                if (_properties.Count > 0)
-                    foreach (var pair in _properties)
-                    {
-                        var propertyValue = _accessor.Read(pair.Key);
-                        pair.Value.Source = propertyValue;
-                    }
-
-                if (_listeners.Count > 0)
                 {
-                    var kind = ListenerDelegateKind.ValueChanged;
-                    if ((_flags & ValuePropagationFlags.UpdateSource) != 0)
-                        kind = ListenerDelegateKind.UpdateSource;
-                    var info = Create1(kind);
-                    for (var index = 0; index < _listeners.Count; index++)
-                    {
-                        var listener = _listeners[index];
-                        InvokeListener(listener, info);
-                    }
+                    _lastValidSource = _source;
+                    if (_isListening && _source is INotifyPropertyChanged newNpc)
+                        newNpc.PropertyChanged += SourcePropertyChanged;
                 }
+
+                if (isUnderOwnerUpdateSource)
+                    _forwardSourceToListeners = true;
+                else
+                    ForwardSourceToListeners(true);
             }
         }
 
-        public BindingManager BindingManager { get; }
+        #region Fields
+
+        private bool _forwardSourceToListeners = true;
 
         private readonly List<ListerInfo> _listeners = new();
         private readonly Dictionary<string, BindingValueWrapper> _properties = new();
@@ -338,6 +398,8 @@ namespace iSukces.Binding
         private BindingValueWrapper _owner;
         private string _ownerPropertyName;
         private object _source;
+
+        #endregion
     }
 
 
@@ -345,6 +407,8 @@ namespace iSukces.Binding
     internal enum ValuePropagationFlags
     {
         None = 0,
-        UpdateSource = 1
+        UpdateSource = 1,
+        OwnerUpdateSource = 2,
+        SourceSetValueWasInvoked = 4
     }
 }

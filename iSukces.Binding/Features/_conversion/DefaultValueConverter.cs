@@ -168,7 +168,7 @@ namespace iSukces.Binding
                     var tt = System.Convert.ChangeType(value, targetType, culture);
                     return tt; // IConvertible
                 }
-                catch (InvalidCastException e)
+                catch (InvalidCastException)
                 {
                     return BindingSpecial.Invalid;
                 }

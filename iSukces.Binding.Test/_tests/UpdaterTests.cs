@@ -37,7 +37,7 @@ namespace iSukces.Binding.Test
             Assert.Equal(typeof(string), u.PropertyType);
 
             var a = u.PropertySetValue("1");
-            Assert.Equal(UpdateSourceResult.Ok, a);
+            Assert.Equal(UpdateSourceResultStatus.Ok, a.Status);
             Assert.Equal("1", dummy.Name);
         }
 
