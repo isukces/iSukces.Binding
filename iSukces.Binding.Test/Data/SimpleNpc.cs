@@ -22,6 +22,7 @@ namespace iSukces.Binding.Test.Data
             get => _decimalNumber;
             set
             {
+                Log($"Try set {nameof(DecimalNumber)}={value.ToString(CultureInfo.InvariantCulture)}");
                 if (value < 0)
                     throw new ArgumentException("value cannot be negative");
                 if (value > 1000)

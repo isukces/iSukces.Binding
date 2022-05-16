@@ -189,11 +189,12 @@ Got value UpdateSource: '27'
             Assert.Equal(27.44m, data.DecimalNumber);
 
             Assert.Equal(2, testing.changessCount);
-            string expected = @$"
+            var expected = @$"
+Try set DecimalNumber=99.45
 [Obj] Subscribe PropertyChanged
 Got value StartBinding: '{expected1}'
-Got value UpdateSource: '{expected2}'
-";
+Try set DecimalNumber=27.44
+Got value UpdateSource: '{expected2}'";
             var log1 = testing.GetLog();
             Assert.Equal(expected.Trim(), log1);
         }
@@ -223,8 +224,10 @@ Got value UpdateSource: '{expected2}'
             Assert.Equal(2, testing.changessCount);
             testing.bm.Dispose();
             const string expected = @"
+Try set DecimalNumber=99.45
 [Obj] Subscribe PropertyChanged
 Got value StartBinding: '99,45'
+Try set DecimalNumber=-1.345
 Got value UpdateSource: 'Invalid', last valid '99,45'
 Got value EndBinding: 'Unbound', last valid '99,45'
 [Obj] Unubscribe PropertyChanged
@@ -314,11 +317,13 @@ Got value EndBinding: 'Unbound', last valid '99,45'
             testing.bm.Dispose();
             //=======
             const string expected = @"
+Try set DecimalNumber=99.45
 Creating dispatcher
 Sure running in two threads
 [Obj] Subscribe PropertyChanged
 Changing attempt 1
 Got value StartBinding: '99,45'
+Try set DecimalNumber=12.34
 Changing attempt 2
 Got value ValueChanged: '12,34'
 Set value in main thread
@@ -361,8 +366,10 @@ ListenerDispatcher.InvokeShutdown
             Assert.Equal(2, testing.changessCount);
             testing.bm.Dispose();
             const string expected = @"
+Try set DecimalNumber=99.451
 [Obj] Subscribe PropertyChanged
 Got value StartBinding: '99,45'
+Try set DecimalNumber=99.449
 Got value UpdateSource: '99,45'
 Got value EndBinding: 'Unbound', last valid '99,45'
 [Obj] Unubscribe PropertyChanged
@@ -396,8 +403,10 @@ Got value EndBinding: 'Unbound', last valid '99,45'
             Assert.Equal(2, testing.changessCount);
             testing.bm.Dispose();
             const string expected = @"
+Try set DecimalNumber=99.451
 [Obj] Subscribe PropertyChanged
 Got value StartBinding: '99,45'
+Try set DecimalNumber=1234
 Got value UpdateSource: '1000'
 Got value EndBinding: 'Unbound', last valid '1000'
 [Obj] Unubscribe PropertyChanged
