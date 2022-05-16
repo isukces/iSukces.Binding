@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
@@ -106,7 +107,8 @@ Got value UpdateSource: '27'
             });
 
             data.IntNumber = 13;
-            var updateResult = updater.UpdateSource("27");
+            var updateResult = updater.UpdateSource(DateTime.Now);
+            // Assert.True(updateResult.Exception is InvalidCastException);
             Assert.Equal(UpdateSourceResult.InvalidValue, updateResult);
             Assert.Equal(2, testing.changessCount);
             const string expected = @"

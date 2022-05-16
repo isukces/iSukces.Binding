@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Windows.Threading;
 
 namespace iSukces.Binding
 {
-    public class BindingManager : DisposableBase
+    public class BindingManager : DisposableBase, IDisposablesContainer
     {
         public BindingManager()
             : base(DisposingStateBehaviour.Throw)
@@ -14,6 +13,15 @@ namespace iSukces.Binding
         }
 
         public void AddDisposable(IDisposable disposable) { _disposables.Add(disposable); }
+
+        public IDisposable AddUpdateSourceAction(Action ac)
+        {
+            _updateSourceActions.Add(ac);
+            return new DisposableAction(() =>
+            {
+                _updateSourceActions.Remove(ac);
+            });
+        }
 
         protected override void DisposeInternal(bool disposing)
         {
@@ -31,9 +39,14 @@ namespace iSukces.Binding
         public BindingBuilder From<T>(T source, Expression<Func<T, object>> pathExpression)
         {
             var path = ExpressionTools.GetBindingPath(pathExpression);
-            return From(source)
-                .WithPath(path);
+            return From(source, path);
         }
+
+        public BindingBuilder From<T>(T source, string path)
+        {
+            return From(source).WithPath(path).WithValidatorsFromAttributes();
+        }
+
 
         public BindingBuilder From(object source)
         {
@@ -46,13 +59,23 @@ namespace iSukces.Binding
 
         public void RemoveDisposable(IDisposable disposable) { _disposables.Remove(disposable); }
 
+        public void UpdateAllSources()
+        {
+            for (var index = 0; index < _updateSourceActions.Count; index++)
+            {
+                var i = _updateSourceActions[index];
+                i.Invoke();
+            }
+        }
+
         public IPropertyInfoProviderRegistry PropertyInfoProviderRegistry { get; set; }
+
+        public string Name { get; set; }
 
         private readonly HashSet<IDisposable> _disposables = new(ReferenceEqualityComparer<IDisposable>.Instance);
 
         private readonly Dictionary<object, BindingValueWrapper> _sources = new(ReferenceEqualityComparer.Instance);
 
-       
+        private readonly List<Action> _updateSourceActions = new();
     }
-     
 }

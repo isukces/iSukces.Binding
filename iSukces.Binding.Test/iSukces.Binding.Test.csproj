@@ -4,8 +4,8 @@
         <LangVersion>9</LangVersion>
         <LangVersion>9</LangVersion>
         <Authors>Internet Sukces Piotr Stęclik</Authors>
-        <Copyright>Copyright © Internet Sukces Piotr Stęclik 2021</Copyright>
-        <TargetFramework>net472</TargetFramework>
+        <Copyright>Copyright © Internet Sukces Piotr Stęclik 2021-2022</Copyright>
+        <TargetFramework>net48</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>

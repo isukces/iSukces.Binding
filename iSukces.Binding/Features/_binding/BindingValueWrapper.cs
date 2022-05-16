@@ -1,12 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 
 namespace iSukces.Binding
 {
-    internal sealed class BindingValueWrapper : DisposableBase
+    public interface IBindingValueWrapper
+    {
+        public object Source { get; }
+    }
+
+    internal sealed class BindingValueWrapper : DisposableBase, IBindingValueWrapper
     {
         public BindingValueWrapper(object source, BindingManager bindingManager)
             : base(DisposingStateBehaviour.None)
@@ -24,7 +30,7 @@ namespace iSukces.Binding
             _listeners.Add(listener);
 
             var infoStart = Create1(ListenerDelegateKind.StartBinding);
-            listener.Invoke(infoStart);
+            InvokeListener(listener, infoStart);
 
             return new DisposableAction(() =>
             {
@@ -32,12 +38,20 @@ namespace iSukces.Binding
                     return;
                 _listeners.Remove(listener);
                 var infoEnd = Create1(ListenerDelegateKind.EndBinding);
-                listener.Invoke(infoEnd);
+                InvokeListener(listener, infoEnd);
                 if (_listeners.Count == 0 && _properties.Count == 0)
                 {
                     Dispose();
                 }
             });
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void InvokeListener(ListerInfo listener, IValueInfo infoEnd)
+        {
+            if (BindingTracker.Instance.LoggingEnabled)
+                BindingTracker.Instance.LogInvokeingListener(this, infoEnd, listener);
+            listener.Invoke(infoEnd);
         }
 
         private PrvValueInfo Create1(ListenerDelegateKind kind)
@@ -80,16 +94,24 @@ namespace iSukces.Binding
 
             if (_properties.Count > 0)
             {
-                foreach (var i in _properties.Values)
+                var toDispose = _properties.Values.ToArray();
+                for (var index = 0; index < toDispose.Length; index++)
+                {
+                    var i = toDispose[index];
                     i.Dispose();
+                }
+
                 _properties.Clear();
             }
 
             if (_listeners.Count > 0)
             {
                 var info = Create1(ListenerDelegateKind.EndBinding);
-                foreach (var i in _listeners)
-                    i.Invoke(info);
+                for (var index = 0; index < _listeners.Count; index++)
+                {
+                    var lister = _listeners[index];
+                    InvokeListener(lister, info);
+                }
                 _listeners.Clear();
             }
 
@@ -182,7 +204,8 @@ namespace iSukces.Binding
             ObjectAccessorMaker.SureAccessor(_source, ref _accessor);
         }
 
-        internal UpdateSourceResult UpdateSource(object value, ListerInfo listerInfo)
+        internal UpdateSourceResult UpdateSource(object value, ListerInfo listerInfo,
+            IReadOnlyList<BindingValidator> bindingValidators)
         {
             try
             {
@@ -198,7 +221,7 @@ namespace iSukces.Binding
                         return UpdateSourceResult.Ok;
                     }
 
-                    var ownerResult = _owner.UpdateSource(_ownerPropertyName, value, listerInfo);
+                    var ownerResult = _owner.UpdateSource(_ownerPropertyName, value, listerInfo, bindingValidators);
                     if (ownerResult.Exception != null)
                     {
                         Source = BindingSpecial.Invalid;
@@ -217,7 +240,8 @@ namespace iSukces.Binding
             }
         }
 
-        private UpdateSourceResult UpdateSource(string propertyName, object value, ListerInfo listerInfo)
+        private UpdateSourceResult UpdateSource(string propertyName, object value, ListerInfo listerInfo,
+            IReadOnlyList<BindingValidator> bindingValidators)
         {
             ThrowIfDisposed();
             SureAccessor();
@@ -226,14 +250,25 @@ namespace iSukces.Binding
 
             if (value is BindingSpecial s)
             {
-                if (s==BindingSpecial.Invalid)
+                if (s == BindingSpecial.Invalid)
                     return UpdateSourceResult.InvalidValue;
                 return UpdateSourceResult.Special;
             }
 
-            
             try
             {
+                if (bindingValidators != null && bindingValidators.Count > 0)
+                {
+                    for (var index = 0; index < bindingValidators.Count; index++)
+                    {
+                        var validator       = bindingValidators[index];
+                        var validatorResult = validator.Check(value);
+                        if (validatorResult.IsOk) continue;
+                        var exception = new Exception(validatorResult.ErrorMessage);
+                        return UpdateSourceResult.FromException(exception, value);
+                    }
+                }
+                
                 var result = _accessor.Write(propertyName, value);
                 return result;
             }
@@ -251,32 +286,42 @@ namespace iSukces.Binding
                 ThrowIfDisposed();
                 if (ReferenceEquals(_source, value))
                     return;
-                if (_isListening && value is INotifyPropertyChanged oldNpc)
+                if (_isListening && _source is INotifyPropertyChanged oldNpc)
                     oldNpc.PropertyChanged -= SourcePropertyChanged;
+                {
+                    if (BindingTracker.Instance.LoggingEnabled)
+                    {
+                        BindingTracker.Instance.LogSourceChanging(this, value);
+                    }
+                }
                 _source = value;
                 if (value is not BindingSpecial)
                     _lastValidSource = _source;
-                if (_isListening && value is INotifyPropertyChanged newNpc)
+                if (_isListening && _source is INotifyPropertyChanged newNpc)
                     newNpc.PropertyChanged += SourcePropertyChanged;
 
                 if (_accessor != null)
                     if (!_accessor.TryChangeSource(_source))
                         _accessor = null;
                 SureAccessor();
-                foreach (var pair in _properties)
-                {
-                    var propertyValue = _accessor.Read(pair.Key);
-                    pair.Value.Source = propertyValue;
-                }
+                if (_properties.Count > 0)
+                    foreach (var pair in _properties)
+                    {
+                        var propertyValue = _accessor.Read(pair.Key);
+                        pair.Value.Source = propertyValue;
+                    }
 
-                for (var index = 0; index < _listeners.Count; index++)
+                if (_listeners.Count > 0)
                 {
-                    var listener = _listeners[index];
-                    var kind     = ListenerDelegateKind.ValueChanged;
+                    var kind = ListenerDelegateKind.ValueChanged;
                     if ((_flags & ValuePropagationFlags.UpdateSource) != 0)
                         kind = ListenerDelegateKind.UpdateSource;
                     var info = Create1(kind);
-                    listener.Invoke(info);
+                    for (var index = 0; index < _listeners.Count; index++)
+                    {
+                        var listener = _listeners[index];
+                        InvokeListener(listener, info);
+                    }
                 }
             }
         }

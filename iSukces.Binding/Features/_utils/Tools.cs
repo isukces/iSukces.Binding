@@ -5,16 +5,16 @@ namespace iSukces.Binding
 {
     public static class Tools
     {
-        public static Bla NeedsConversion(object value, Type t)
+        public static ValueConversionStatus NeedsConversion(object value, Type t)
         {
-            if (value is BindingSpecial)
-                return Bla.Special;
+            if (value is BindingSpecial || t is null)
+                return ValueConversionStatus.Special;
             if (value is null)
-                return t.IsClass || t.IsInterface ? Bla.Acceptable : Bla.NeedConversion;
+                return t.IsClass || t.IsInterface ? ValueConversionStatus.Acceptable : ValueConversionStatus.NeedConversion;
             var tt = value.GetType();
             if (t.IsAssignableFrom(tt))
-                return Bla.Acceptable;
-            return Bla.NeedConversion;
+                return ValueConversionStatus.Acceptable;
+            return ValueConversionStatus.NeedConversion;
         }
 
         public static UpdateSourceResult PropertySetValue(PropertyInfo pi, object obj, object value)
@@ -23,14 +23,14 @@ namespace iSukces.Binding
                 return UpdateSourceResult.NotSet;
 
             if (!pi.CanWrite)
-                throw new UnableToChangeReadOnlyPropertyException("");
+                throw new UnableToChangeReadOnlyPropertyException(pi.Name + " of " + pi.ReflectedType);
 
             if (value is BindingSpecial)
                 return UpdateSourceResult.Special;
 
 
             var cat = NeedsConversion(value, pi.PropertyType);
-            if (cat == Bla.Acceptable)
+            if (cat == ValueConversionStatus.Acceptable)
             {
                 pi.SetValue(obj, value);
                 return UpdateSourceResult.Ok;
@@ -39,7 +39,7 @@ namespace iSukces.Binding
         }
     }
 
-    public enum Bla
+    public enum ValueConversionStatus
     {
         Special,
         Acceptable,

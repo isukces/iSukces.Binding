@@ -37,7 +37,7 @@ namespace iSukces.Binding
                 if (!_byProperty.TryGetValue(propertyName, out var propertyInfo))
                 {
                     _byProperty[propertyName] = propertyInfo =
-                        _type.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
+                        _type.GetProperty(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 }
 
                 return propertyInfo;

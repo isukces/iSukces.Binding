@@ -1,10 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using JetBrains.Annotations;
 
 namespace iSukces.Binding
 {
     public partial class BindingBuilder
     {
+        public BindingBuilder WithListenerTag(object listenerTag)
+        {
+            ListenerTag = listenerTag;
+            return this;
+        }
+
         private sealed class Builder
         {
             public Builder(BindingBuilder src)
@@ -51,35 +59,59 @@ namespace iSukces.Binding
                         mode = BindingMode.OneWay;
                 }
 
+                SureInfo();
+                var accessor = propertyInfo.Create(target);
+
+                void Listener([NotNull] IValueInfo info)
                 {
-                    SureInfo();
-                    var accessor = propertyInfo.Create(target);
-
-                    void Listener([NotNull] IValueInfo info)
-                    {
-                        // update target property when source changed
-                        accessor.PropertySetValue(info.Value);
-                    }
-
-                    switch (mode)
-                    {
-                        case BindingMode.TwoWay:
-                            return CreateListener(Listener, accessor.PropertyType,
-                                (disconnectFromBindingManager, info, wrapper) =>
-                                {
-                                    var eventSubscription = accessor.SubscribePropertyNotification(o =>
-                                    {
-                                        return wrapper.UpdateSource(o, info);
-                                    });
-                                    return new CombinedDisposable(disconnectFromBindingManager, eventSubscription);
-                                });
-                        case BindingMode.OneWay:
-                            return CreateListener(Listener, accessor.PropertyType, null);
-                    }
+                    // update target property when source changed
+                    accessor.PropertySetValue(info.Value);
                 }
 
-                throw new NotImplementedException(mode.ToString());
+                switch (mode)
+                {
+                    case BindingMode.TwoWay:
+                        return CreateListener(Listener, accessor.PropertyType, TwoWayBindingFactoryMethod);
+                    case BindingMode.OneWay:
+                        return CreateListener(Listener, accessor.PropertyType, null);
+                    default: 
+                        throw new ArgumentOutOfRangeException(mode.ToString());
+                }
+
+                IDisposable TwoWayBindingFactoryMethod(IDisposable disconnectFromBindingManager,
+                    ListerInfo info, BindingValueWrapper wrapper)
+                {
+                    if (_src.Validators is not IReadOnlyList<BindingValidator> bindingValidators)
+                        bindingValidators = _src.Validators?.ToArray() ?? Array.Empty<BindingValidator>();
+                    
+                    var eventSubscription = accessor.SubscribePropertyNotification(o =>
+                    {
+                       
+
+                        var updateSourceResult = wrapper.UpdateSource(o, info, bindingValidators);
+
+                        if (BindingTracker.Instance.LoggingEnabled)
+                        {
+                            BindingTracker.Instance.LogSourceUpdated(updateSourceResult, info);
+                            BindingTracker.Instance.NotifyDataModelChanged();
+                        }
+
+                        return updateSourceResult;
+                    });
+                    // if (bindingValidators.Count > 0)
+                    {
+                        var m = _bindingManager.AddUpdateSourceAction(() =>
+                        {
+                            eventSubscription.ForceUpdate();
+                        });
+                        disconnectFromBindingManager = new CombinedDisposable(disconnectFromBindingManager, m);
+                    }
+                    return new CombinedDisposable(
+                        disconnectFromBindingManager,
+                        eventSubscription);
+                }
             }
+
 
             internal IDisposable CreateListener(ListenerDelegate listener,
                 Type typeAcceptedByListener, aaaFunc factory)
@@ -90,7 +122,9 @@ namespace iSukces.Binding
                     _src.Converter,
                     _src.ConverterParameter,
                     _src.CultureInfo,
-                    _src.ListenerDispatcher);
+                    _src.ListenerDispatcher,
+                    _src.StringFormat,
+                    _src.ListenerTag);
                 disposables.RemoveFromListerer = wrapper.AddListenerAction(info);
 
                 var disconnectFromBindingManager = new DisposableAction(() =>
@@ -109,6 +143,8 @@ namespace iSukces.Binding
                 return disposables.MainDisposing;
             }
 
+           
+            /*
             public ITwoWayBinding CreateTwoWayBinding(ListenerDelegate listener, Type typeAcceptedByListener)
             {
                 var disposable = CreateListener(listener, typeAcceptedByListener,
@@ -128,11 +164,26 @@ namespace iSukces.Binding
                 _src.Mode = BindingMode.TwoWay;
                 return Create(target, propertyName);
             }
-            
+            */
+
 
             private readonly BindingManager _bindingManager;
 
             private readonly BindingBuilder _src;
+
+            public ITwoWayBinding CreateTwoWayBinding(ListenerDelegate listener, Type typeAcceptedByListener)
+            {
+                var disposable = CreateListener(listener, typeAcceptedByListener,
+                    (disconnectFromBindingManager, info, wrapper) =>
+                    {
+                        var result = new TwoWayBinding(disconnectFromBindingManager, obj =>
+                        {
+                            return wrapper.UpdateSource(obj, info, null);
+                        });
+                        return result;
+                    });
+                return (ITwoWayBinding)disposable;
+            }
         }
     }
 

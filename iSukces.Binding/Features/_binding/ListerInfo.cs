@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -7,7 +8,12 @@ using JetBrains.Annotations;
 
 namespace iSukces.Binding
 {
-    internal sealed class ListerInfo
+    public interface IListerInfo
+    {
+        [NotNull] Type TypeAcceptedByListener { get; }
+        object         Tag                    { get; } 
+    }
+    internal sealed class ListerInfo:IListerInfo
     {
         /// <summary>
         ///     Creates instance of info
@@ -22,31 +28,51 @@ namespace iSukces.Binding
         /// <param name="converterParameter">optional parameter for value converter</param>
         /// <param name="currentCulture"></param>
         /// <param name="listenerDispatcher"></param>
+        /// <param name="stringFormat"></param>
+        /// <param name="tag"></param>
         public ListerInfo(ListenerDelegate action, Type typeAcceptedByListener,
             IBindingValueConverter converter,
-            object converterParameter, CultureInfo currentCulture,
-            Dispatcher listenerDispatcher)
+            object converterParameter,
+            CultureInfo currentCulture,
+            Dispatcher listenerDispatcher,
+            string stringFormat, 
+            object tag)
         {
-            _action                 = action;
-            _typeAcceptedByListener = typeAcceptedByListener ?? typeof(object);
-            _converter              = converter;
-            _converterParameter     = converterParameter;
-            _listenerDispatcher     = listenerDispatcher;
-            _currentCulture         = currentCulture ?? CultureInfo.CurrentCulture;
+            _action                = action;
+            TypeAcceptedByListener = typeAcceptedByListener ?? typeof(object);
+            _converter             = converter;
+            _converterParameter    = converterParameter;
+            _listenerDispatcher    = listenerDispatcher;
+            _stringFormat          = stringFormat;
+            _currentCulture        = currentCulture ?? CultureInfo.CurrentCulture;
+            Tag                    = tag;
         }
 
         private bool Convert(ref object value)
         {
             void ConvertWithDefault(ref object value2)
             {
-                value2 = DefaultValueConverter.Instance.Convert(value2, _typeAcceptedByListener, _converterParameter,
+                if (!string.IsNullOrEmpty(this._stringFormat))
+                {
+                    if (TypeAcceptedByListener == typeof(string))
+                    {
+                        if (value2 is IFormattable d)
+                        {
+                            value2 = d.ToString(_stringFormat, _currentCulture);
+                            return;
+                        }
+                    }
+
+                }
+
+                value2 = DefaultValueConverter.Instance.Convert(value2, TypeAcceptedByListener, _converterParameter,
                     _currentCulture);
             }
             
             if (_converter is null)
             {
-                var c = Tools.NeedsConversion(value, _typeAcceptedByListener);
-                if (c is Bla.Acceptable or Bla.Special)
+                var c = Tools.NeedsConversion(value, TypeAcceptedByListener);
+                if (c is ValueConversionStatus.Acceptable or ValueConversionStatus.Special)
                     return false;
                 ConvertWithDefault(ref value);
                 return true;
@@ -54,9 +80,9 @@ namespace iSukces.Binding
 
             try
             {
-                value = _converter.Convert(value, _typeAcceptedByListener, _converterParameter, _currentCulture);
-                var c = Tools.NeedsConversion(value, _typeAcceptedByListener);
-                if (c is Bla.Acceptable or Bla.Special)
+                value = _converter.Convert(value, TypeAcceptedByListener, _converterParameter, _currentCulture);
+                var c = Tools.NeedsConversion(value, TypeAcceptedByListener);
+                if (c is ValueConversionStatus.Acceptable or ValueConversionStatus.Special)
                     return true;
             }
             // ReSharper disable once EmptyGeneralCatchClause
@@ -81,12 +107,14 @@ namespace iSukces.Binding
             {
             }
             var c = Tools.NeedsConversion(value, sourceType);
-            if (c is Bla.Acceptable or Bla.Special)
+            if (c is ValueConversionStatus.Acceptable or ValueConversionStatus.Special)
                 return value;
             value = DefaultValueConverter.Instance.ConvertBack(value, sourceType, _converterParameter,
                 _currentCulture);
             c     = Tools.NeedsConversion(value, sourceType);
-            return c is Bla.Acceptable or Bla.Special ? value : BindingSpecial.Invalid;
+            if (c is ValueConversionStatus.Acceptable or ValueConversionStatus.Special)
+                return value;
+            return BindingSpecial.Invalid;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -123,7 +151,9 @@ namespace iSukces.Binding
 
         private readonly CultureInfo _currentCulture;
         private readonly Dispatcher _listenerDispatcher;
-
-        [NotNull] private readonly Type _typeAcceptedByListener;
+        private readonly string _stringFormat;
+        
+        public Type   TypeAcceptedByListener { get; }
+        public object Tag                    { get; }
     }
 }

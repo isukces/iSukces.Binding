@@ -10,19 +10,19 @@ namespace iSukces.Binding.Test
         {
             return new[]
             {
-                new object[] {1, typeof(object), Bla.Acceptable},
-                new object[] {1, typeof(long), Bla.NeedConversion},
-                new object[] {1, typeof(IConvertible), Bla.Acceptable},
+                new object[] {1, typeof(object), ValueConversionStatus.Acceptable},
+                new object[] {1, typeof(long), ValueConversionStatus.NeedConversion},
+                new object[] {1, typeof(IConvertible), ValueConversionStatus.Acceptable},
 
-                new object[] {null, typeof(object), Bla.Acceptable},
-                new object[] {null, typeof(IConvertible), Bla.Acceptable},
-                new object[] {null, typeof(long), Bla.NeedConversion}
+                new object[] {null, typeof(object), ValueConversionStatus.Acceptable},
+                new object[] {null, typeof(IConvertible), ValueConversionStatus.Acceptable},
+                new object[] {null, typeof(long), ValueConversionStatus.NeedConversion}
             };
         }
 
         [Theory]
         [MemberData(nameof(Dane_do_testowania))]
-        public void MetodaTestowa(object value, Type requestedType, Bla expected)
+        public void MetodaTestowa(object value, Type requestedType, ValueConversionStatus expected)
         {
             Assert.Equal(expected, Tools.NeedsConversion(value, requestedType));
         }

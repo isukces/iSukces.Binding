@@ -2,34 +2,34 @@
 
 namespace iSukces.Binding
 {
-    public class DisposableBase : IDisposable
+    public abstract class DisposableBase : IDisposable
     {
-        public DisposableBase(DisposingStateBehaviour disposingStateBehaviour)
+        protected DisposableBase(DisposingStateBehaviour disposingStateBehaviour)
         {
             _disposingStateBehaviour = disposingStateBehaviour;
         }
 
         ~DisposableBase()
         {
-            if (_disposingState != DisposingState.Alive)
+            if (ObjectDisposingState != DisposingState.Alive)
                 return;
-            _disposingState = DisposingState.Disposing;
+            ObjectDisposingState = DisposingState.Disposing;
             DisposeInternal(false);
-            _disposingState = DisposingState.Disposed;
+            ObjectDisposingState = DisposingState.Disposed;
         }
 
         public void Dispose()
         {
-            if (_disposingState != DisposingState.Alive)
+            if (ObjectDisposingState != DisposingState.Alive)
             {
                 if ((_disposingStateBehaviour & DisposingStateBehaviour.Throw) != 0)
                     throw new ObjectDisposedException("Already disposed");
                 return;
             }
 
-            _disposingState = DisposingState.Disposing;
+            ObjectDisposingState = DisposingState.Disposing;
             DisposeInternal(true);
-            _disposingState = DisposingState.Disposed;
+            ObjectDisposingState = DisposingState.Disposed;
             GC.SuppressFinalize(this);
         }
 
@@ -44,11 +44,11 @@ namespace iSukces.Binding
 
         protected void ThrowIfDisposed()
         {
-            if (_disposingState != DisposingState.Alive)
+            if (ObjectDisposingState != DisposingState.Alive)
                 throw new ObjectDisposedException("Already disposed");
         }
 
-        protected DisposingState _disposingState { get; private set; }
+        public DisposingState ObjectDisposingState { get; private set; }
 
         private readonly DisposingStateBehaviour _disposingStateBehaviour;
     }

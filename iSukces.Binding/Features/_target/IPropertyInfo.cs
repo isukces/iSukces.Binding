@@ -22,15 +22,22 @@ namespace iSukces.Binding
         OnPropertyChanged = 1,
 
         /// <summary>
-        ///     There is dedicated event to track property changes i.e. OnVisibleChanged
+        ///     There is dedicated event to track property changes i.e. VisibleChanged
         /// </summary>
         SpecialEvent = 2,
 
 
         BindOnPropertyChanged = 4,
-        
+
         BindOnLostFocus = 8,
-        
-        TwoWayBindingByDefault = 16
+
+        TwoWayBindingByDefault = 16,
+
+        /// <summary>
+        /// Property is default property for control i.e. Text for TextBox
+        /// </summary>
+        DefaultControlProperty = 32,
+
+        InvalidValueNotification = 64
     }
 }

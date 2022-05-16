@@ -10,7 +10,7 @@ namespace iSukces.Binding
     }
 
 
-    class PrvValueInfo : IValueInfo
+    internal class PrvValueInfo : IValueInfo
     {
         public PrvValueInfo(ListenerDelegateKind kind, object value, object lastValidValue)
         {

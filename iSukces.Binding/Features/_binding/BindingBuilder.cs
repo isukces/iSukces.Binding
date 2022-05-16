@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Windows.Threading;
 using JetBrains.Annotations;
 
@@ -27,7 +30,8 @@ namespace iSukces.Binding
 
         public IDisposable BindTo<TTarget>(TTarget target, string propertyName)
         {
-            return new Builder(this).Create(target, propertyName);
+            var builder = new Builder(this);
+            return builder.Create(target, propertyName);
         }
 
         public IDisposable BindToOneWay<TTarget>(TTarget target,
@@ -56,11 +60,6 @@ namespace iSukces.Binding
         {
             var disposable = new Builder(this).CreateListener(listener, typeAcceptedByListener, null);
             return disposable;
-        }
-
-        public ITwoWayBinding CreateTwoWayBinding<T>(ListenerDelegate listener)
-        {
-            return new Builder(this).CreateTwoWayBinding(listener, typeof(T));
         }
 
         private BindingManager GetBindingManager() { return _wrapper.BindingManager; }
@@ -97,6 +96,56 @@ namespace iSukces.Binding
             return this;
         }
 
+        public BindingBuilder WithStringFormat(string format)
+        {
+            StringFormat = format;
+            return this;
+        }
+
+        public BindingBuilder WithValidator(BindingValidator validator)
+        {
+            Validators.Add(validator);
+            return this;
+        }
+
+        public BindingBuilder WithValidatorsFromAttributes()
+        {
+            PropertyInfo GetProperty()
+            {
+                if (string.IsNullOrEmpty(Path))
+                    return null;
+                var currentType = _wrapper.Source?.GetType();
+                if (currentType is null)
+                    return null;
+                var items = Path.Split('.');
+                for (var index = 0; index < items.Length; index++)
+                {
+                    var propertyName = items[index];
+                    var property = currentType.GetProperty(
+                        propertyName,
+                        BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
+                    if (property is null || index == items.Length - 1)
+                        return property;
+                    currentType = property.PropertyType;
+                }
+
+                return null;
+            }
+
+            var prop = GetProperty();
+            if (prop is null)
+                return this;
+
+            var minLengthAttribute = prop.GetCustomAttribute<MinLengthAttribute>();
+            if (minLengthAttribute != null)
+                Validators.Add(new MinStringLengthBindingValidator(minLengthAttribute.Length));
+
+            return this;
+        }
+
+        public IList<BindingValidator> Validators { get; } = new List<BindingValidator>();
+
         public string                 Path               { get; set; }
         public IBindingValueConverter Converter          { get; set; }
         public object                 ConverterParameter { get; set; }
@@ -105,6 +154,10 @@ namespace iSukces.Binding
         public BindingMode            Mode               { get; set; }
 
         public UpdateSourceTrigger UpdateSourceTrigger { get; set; }
+
+        public string StringFormat { get; set; }
+
+        public object ListenerTag { get; set; }
 
         private readonly BindingValueWrapper _wrapper;
 
@@ -120,6 +173,13 @@ namespace iSukces.Binding
 
             public IDisposable MainDisposing { get; set; }
         }
+
+        public ITwoWayBinding CreateTwoWayBinding<T>(ListenerDelegate listener)
+        {
+            return new Builder(this).CreateTwoWayBinding(listener, typeof(T));
+        }
+
+
     }
 
     [Flags]

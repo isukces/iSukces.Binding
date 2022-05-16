@@ -4,9 +4,14 @@ namespace iSukces.Binding
 {
     public interface IPropertyAccessor2 : IDisposable, IPropertyWriter
     {
-        IDisposable SubscribePropertyNotification(UpdateSourceDe updateBackAction);
+        IPropertyUpdateSession SubscribePropertyNotification(UpdateSourceDe updateBackAction);
         Type PropertyType { get; }
     }
 
     public delegate UpdateSourceResult UpdateSourceDe(object value);
+
+    public interface IPropertyUpdateSession : IDisposable
+    {
+        void ForceUpdate();
+    }
 }

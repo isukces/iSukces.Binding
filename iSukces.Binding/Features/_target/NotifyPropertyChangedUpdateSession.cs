@@ -3,7 +3,7 @@ using System.ComponentModel;
 
 namespace iSukces.Binding
 {
-    public sealed class NotifyPropertyChangedUpdateSession : DisposableBase
+    public sealed class NotifyPropertyChangedUpdateSession : DisposableBase, IPropertyUpdateSession
     {
         public NotifyPropertyChangedUpdateSession(Action onPropertyChangedAction, object target, string propertyName)
             : base(DisposingStateBehaviour.None)
@@ -24,14 +24,17 @@ namespace iSukces.Binding
 
         private void NpcOnPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == _propertyName)
-            {
+            if (e.PropertyName == _propertyName) 
                 _onPropertyChangedAction();
-            }
         }
 
         private readonly Action _onPropertyChangedAction;
         private readonly string _propertyName;
         private readonly object _target;
+
+        public void ForceUpdate()
+        {
+            _onPropertyChangedAction();
+        }
     }
 }

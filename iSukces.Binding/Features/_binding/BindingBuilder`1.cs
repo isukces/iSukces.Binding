@@ -10,15 +10,23 @@ namespace iSukces.Binding
     /// <typeparam name="TSource"></typeparam>
     public sealed class BindingBuilder<TSource>
     {
-        public BindingBuilder(TSource source, BindingManager bindingManager)
+        public BindingBuilder(TSource source, BindingManager manager)
         {
             _source         = source;
-            _bindingManager = bindingManager;
+            Manager = manager;
         }
 
         public BindingBuilder From(Expression<Func<TSource, object>> pathExpression)
         {
-            var a = _bindingManager.From(_source, pathExpression);
+            var a = Manager.From(_source, pathExpression);
+            if (DefaultListenerDispatcher != null)
+                a.ListenerDispatcher = DefaultListenerDispatcher;
+            return a;
+        }
+        
+        public BindingBuilder From(string path)
+        {
+            var a =  Manager.From(_source, path);
             if (DefaultListenerDispatcher != null)
                 a.ListenerDispatcher = DefaultListenerDispatcher;
             return a;
@@ -26,7 +34,9 @@ namespace iSukces.Binding
 
         public Dispatcher DefaultListenerDispatcher { get; set; }
         
-        private readonly BindingManager _bindingManager;
+        public BindingManager Manager { get; }
         private readonly TSource _source;
+
+        
     }
 }

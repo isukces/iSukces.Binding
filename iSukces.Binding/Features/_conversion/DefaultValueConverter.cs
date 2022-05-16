@@ -122,6 +122,18 @@ namespace iSukces.Binding
             if (targetType.IsAssignableFrom(currentType))
                 return value;
 
+
+            {
+                if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                {
+                    if (value is string txt && string.IsNullOrWhiteSpace(txt))
+                        return null;
+                    var genericArgument = targetType.GetGenericArguments()[0];
+                    return ConvertBack(value, genericArgument, parameter, culture);
+
+                }
+            }
+
             #region Type converter
 
             {
@@ -148,6 +160,19 @@ namespace iSukces.Binding
             }
 
             #endregion
+
+            if (value is IConvertible)
+            {
+                try
+                {
+                    var tt = System.Convert.ChangeType(value, targetType, culture);
+                    return tt; // IConvertible
+                }
+                catch (InvalidCastException e)
+                {
+                    return BindingSpecial.Invalid;
+                }
+            }
 
             return BindingSpecial.Invalid; // give up
         }

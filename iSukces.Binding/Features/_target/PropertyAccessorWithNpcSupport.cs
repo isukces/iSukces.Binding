@@ -14,25 +14,30 @@ namespace iSukces.Binding
         {
             _target       = target;
             _propertyInfo = propertyInfo;
+            /*
             if (target is INotifyPropertyChanged npc)
                 npc.PropertyChanged += NpcOnPropertyChanged;
+        */
         }
 
-        private static void NpcOnPropertyChanged(object sender, PropertyChangedEventArgs e) { }
+        //private static void NpcOnPropertyChanged(object sender, PropertyChangedEventArgs e) { }
 
         protected override void DisposeInternal(bool disposing)
         {
+            /*
             if (_target is INotifyPropertyChanged npc)
                 npc.PropertyChanged -= NpcOnPropertyChanged;
+            */
             base.DisposeInternal(disposing);
         }
 
-        public IDisposable SubscribePropertyNotification(UpdateSourceDe updateBackAction)
+        public IPropertyUpdateSession SubscribePropertyNotification(UpdateSourceDe updateBackAction)
         {
             return new NotifyPropertyChangedUpdateSession(() =>
             {
                 var value = _propertyInfo.GetValue(_target);
-                updateBackAction(value);
+                var result = updateBackAction(value);
+                VisualNotification.Instance.Notify(_target, result);
             }, _target, _propertyInfo.Name);
         }
 
@@ -53,6 +58,8 @@ namespace iSukces.Binding
         }
 
         public Type PropertyType => _propertyInfo?.PropertyType;
+        
+
         private readonly PropertyInfo _propertyInfo;
         private readonly object _target;
     }
