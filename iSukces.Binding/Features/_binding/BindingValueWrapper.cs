@@ -306,7 +306,10 @@ namespace iSukces.Binding
             ThrowIfDisposed();
             SureAccessor();
             if (listerInfo != null)
-                value = listerInfo.ConvertBack(value, _accessor.GetPropertyType(propertyName));
+            {
+                var propertyType = _accessor.GetPropertyType(propertyName);
+                value = listerInfo.ConvertBack(value, propertyType);
+            }
 
             if (value is BindingSpecial s)
             {
@@ -314,6 +317,9 @@ namespace iSukces.Binding
                     return UpdateSourceResult.InvalidValue;
                 return UpdateSourceResult.Special;
             }
+
+            if (value is UpdateSourceResult afterConversion)
+                return afterConversion;
 
             try
             {

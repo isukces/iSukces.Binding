@@ -71,6 +71,14 @@ namespace iSukces.Binding
             return this;
         }
 
+        public BindingBuilder WithUpdateSourceTrigger(UpdateSourceTrigger updateSourceTrigger)
+        {
+            UpdateSourceTrigger = updateSourceTrigger;
+            return this;
+        }
+        
+       
+
         public BindingBuilder WithConverter(IBindingValueConverter converter, object converterParameter)
         {
             Converter          = converter;

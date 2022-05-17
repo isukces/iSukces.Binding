@@ -103,8 +103,10 @@ namespace iSukces.Binding
                     value = _converter.ConvertBack(value, sourceType, _converterParameter, _currentCulture);
             }
             // ReSharper disable once EmptyGeneralCatchClause
-            catch
+            catch (Exception e)
             {
+                return UpdateSourceResult.FromException(e, value);
+                // return 
             }
             var c = Tools.NeedsConversion(value, sourceType);
             if (c is ValueConversionStatus.Acceptable or ValueConversionStatus.Special)

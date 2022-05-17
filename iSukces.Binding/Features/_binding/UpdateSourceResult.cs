@@ -36,7 +36,7 @@ namespace iSukces.Binding
         {
             return new UpdateSourceResult(null, value, UpdateSourceResultStatus.Ok);
         }
-     
+
 
         public override string ToString()
         {
@@ -63,7 +63,6 @@ namespace iSukces.Binding
 
         #region Fields
 
-        // public static UpdateSourceResult Ok = new();
         public static readonly UpdateSourceResult Special = new(UpdateSourceResultStatus.Special);
         public static readonly UpdateSourceResult NotSet = new(UpdateSourceResultStatus.NotSet);
         public static readonly UpdateSourceResult InvalidValue = new(UpdateSourceResultStatus.InvalidValue);
