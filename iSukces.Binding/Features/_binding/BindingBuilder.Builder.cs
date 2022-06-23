@@ -102,7 +102,7 @@ namespace iSukces.Binding
                     {
                         var m = _bindingManager.AddUpdateSourceAction(() =>
                         {
-                            eventSubscription.ForceUpdate();
+                            eventSubscription.ForceUpdate(false);
                         });
                         disconnectFromBindingManager = new CombinedDisposable(disconnectFromBindingManager, m);
                     }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Reflection;
 using JetBrains.Annotations;
 
@@ -33,9 +32,16 @@ namespace iSukces.Binding
 
         public IPropertyUpdateSession SubscribePropertyNotification(UpdateSourceDe updateBackAction)
         {
-            return new NotifyPropertyChangedUpdateSession(() =>
+            return new NotifyPropertyChangedUpdateSession(ignoreDisabledControls =>
             {
-                var value = _propertyInfo.GetValue(_target);
+                var   emptyValue = Tools.ShouldAssumeEmptyValue(ignoreDisabledControls, _target);
+                
+                object value;
+                if (emptyValue)
+                    value = BindingSpecial.NotSet;
+                else
+                    value = _propertyInfo.GetValue(_target);
+
                 var result = updateBackAction(value);
                 VisualNotification.Instance.Notify(_target, result);
             }, _target, _propertyInfo.Name);

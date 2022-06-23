@@ -38,7 +38,7 @@ namespace iSukces.Binding
 
         public BindingBuilder From<T>(T source, Expression<Func<T, object>> pathExpression)
         {
-            var path = ExpressionTools.GetBindingPath(pathExpression);
+            var path = XExpressionTools.GetBindingPath(pathExpression);
             return From(source, path);
         }
 
@@ -55,7 +55,10 @@ namespace iSukces.Binding
             return new BindingBuilder(wrapper);
         }
 
-        public BindingBuilder<TSource> GetBuilder<TSource>(TSource source) { return new(source, this); }
+        public BindingBuilder<TSource> GetBuilder<TSource>(TSource source)
+        {
+            return new(source, this);
+        }
 
         public void RemoveDisposable(IDisposable disposable) { _disposables.Remove(disposable); }
 

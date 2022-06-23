@@ -117,31 +117,45 @@ namespace iSukces.Binding
 
         private void ForwardSourceToListeners(bool force)
         {
+            if ((_flags & ValuePropagationFlags.ForwardSourceToListeners) != 0)
+            {
+                throw new InvalidOperationException();
+            }
             if (!force && !_forwardSourceToListeners) return;
             _forwardSourceToListeners = false;
 
-            if (_accessor != null)
-                if (!_accessor.TryChangeSource(_source))
-                    _accessor = null;
-            SureAccessor();
-            if (_properties.Count > 0)
-                foreach (var pair in _properties)
-                {
-                    var propertyValue = _accessor.Read(pair.Key);
-                    pair.Value.Source = propertyValue;
-                }
-
-            if (_listeners.Count > 0)
+            
+            var oldFlags = _flags;
+            _flags |= ValuePropagationFlags.ForwardSourceToListeners;
+            try
             {
-                var kind = ListenerDelegateKind.ValueChanged;
-                if ((_flags & ValuePropagationFlags.UpdateSource) != 0)
-                    kind = ListenerDelegateKind.UpdateSource;
-                var info = Create1(kind);
-                for (var index = 0; index < _listeners.Count; index++)
+                if (_accessor != null)
+                    if (!_accessor.TryChangeSource(_source))
+                        _accessor = null;
+                SureAccessor();
+                if (_properties.Count > 0)
+                    foreach (var pair in _properties)
+                    {
+                        var propertyValue = _accessor.Read(pair.Key);
+                        pair.Value.Source = propertyValue;
+                    }
+
+                if (_listeners.Count > 0)
                 {
-                    var listener = _listeners[index];
-                    InvokeListener(listener, info);
+                    var kind = ListenerDelegateKind.ValueChanged;
+                    if ((_flags & ValuePropagationFlags.UpdateSource) != 0)
+                        kind = ListenerDelegateKind.UpdateSource;
+                    var info = Create1(kind);
+                    for (var index = 0; index < _listeners.Count; index++)
+                    {
+                        var listener = _listeners[index];
+                        InvokeListener(listener, info);
+                    }
                 }
+            }
+            finally
+            {
+                _flags = oldFlags;
             }
         }
 
@@ -242,6 +256,10 @@ namespace iSukces.Binding
         internal UpdateSourceResult UpdateSource(object value, ListerInfo listerInfo,
             IReadOnlyList<BindingValidator> bindingValidators)
         {
+            if ((_flags & ValuePropagationFlags.ForwardSourceToListeners) != 0)
+            {
+                return UpdateSourceResult.NotSet;
+            }
             try
             {
                 ThrowIfDisposed();
@@ -415,6 +433,7 @@ namespace iSukces.Binding
         None = 0,
         UpdateSource = 1,
         OwnerUpdateSource = 2,
-        SourceSetValueWasInvoked = 4
+        SourceSetValueWasInvoked = 4,
+        ForwardSourceToListeners = 8
     }
 }

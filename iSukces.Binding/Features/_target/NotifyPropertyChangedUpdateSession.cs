@@ -5,7 +5,7 @@ namespace iSukces.Binding
 {
     public sealed class NotifyPropertyChangedUpdateSession : DisposableBase, IPropertyUpdateSession
     {
-        public NotifyPropertyChangedUpdateSession(Action onPropertyChangedAction, object target, string propertyName)
+        public NotifyPropertyChangedUpdateSession(ForceUpdateDelegate onPropertyChangedAction, object target, string propertyName)
             : base(DisposingStateBehaviour.None)
         {
             _onPropertyChangedAction = onPropertyChangedAction;
@@ -25,16 +25,18 @@ namespace iSukces.Binding
         private void NpcOnPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == _propertyName) 
-                _onPropertyChangedAction();
+                _onPropertyChangedAction(false);
         }
 
-        private readonly Action _onPropertyChangedAction;
+        private readonly ForceUpdateDelegate _onPropertyChangedAction;
         private readonly string _propertyName;
         private readonly object _target;
 
-        public void ForceUpdate()
+        public void ForceUpdate(bool ignoreDisabledControls)
         {
-            _onPropertyChangedAction();
+            _onPropertyChangedAction(ignoreDisabledControls);
         }
     }
+
+    public delegate void ForceUpdateDelegate(bool ignoreDisabledControls);
 }

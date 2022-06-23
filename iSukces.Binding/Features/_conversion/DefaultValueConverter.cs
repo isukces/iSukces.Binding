@@ -123,15 +123,12 @@ namespace iSukces.Binding
                 return value;
 
 
+            var underNullable = Tools.GetNullable(targetType);
+            if (underNullable is not null)
             {
-                if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(Nullable<>))
-                {
-                    if (value is string txt && string.IsNullOrWhiteSpace(txt))
-                        return null;
-                    var genericArgument = targetType.GetGenericArguments()[0];
-                    return ConvertBack(value, genericArgument, parameter, culture);
-
-                }
+                if (value is string txt && string.IsNullOrWhiteSpace(txt))
+                    return null;
+                return ConvertBack(value, underNullable, parameter, culture);
             }
 
             #region Type converter

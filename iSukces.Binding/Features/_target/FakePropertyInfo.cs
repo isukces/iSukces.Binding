@@ -40,9 +40,8 @@ namespace iSukces.Binding
             {
             }
 
-            public void ForceUpdate()
+            public void ForceUpdate(bool ignoreDisabledControls)
             {
-                
             }
         }
     }

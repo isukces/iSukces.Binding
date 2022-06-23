@@ -17,14 +17,14 @@ namespace iSukces.Binding
         public IDisposable BindTo<TTarget>(TTarget target,
             Expression<Func<TTarget, object>> propertyExpression)
         {
-            string propertyName = ExpressionTools.GetBindingPath(propertyExpression);
+            string propertyName = XExpressionTools.GetBindingPath(propertyExpression);
             return new Builder(this).Create(target, propertyName);
         }
 
         public IDisposable BindTo<TTarget>(TTarget target,
             Expression<Func<TTarget, object>> propertyExpression, BindingMode mode)
         {
-            var propertyName = ExpressionTools.GetBindingPath(propertyExpression);
+            var propertyName = XExpressionTools.GetBindingPath(propertyExpression);
             return new Builder(this).Create(target, propertyName, mode);
         }
 
@@ -38,7 +38,7 @@ namespace iSukces.Binding
             Expression<Func<TTarget, object>> propertyExpression)
         {
             Mode = BindingMode.OneWay;
-            var propertyName = ExpressionTools.GetBindingPath(propertyExpression);
+            var propertyName = XExpressionTools.GetBindingPath(propertyExpression);
             return new Builder(this).Create(target, propertyName);
         }
 
@@ -46,7 +46,7 @@ namespace iSukces.Binding
             Expression<Func<TTarget, object>> propertyExpression)
         {
             Mode = BindingMode.TwoWay;
-            var propertyName = ExpressionTools.GetBindingPath(propertyExpression);
+            var propertyName = XExpressionTools.GetBindingPath(propertyExpression);
             return new Builder(this).Create(target, propertyName);
         }
 

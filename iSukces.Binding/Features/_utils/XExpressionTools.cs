@@ -5,7 +5,7 @@ using JetBrains.Annotations;
 
 namespace iSukces.Binding
 {
-    internal static class ExpressionTools
+    public static class XExpressionTools
     {
         // ReSharper disable once UnusedParameter.Global
         public static string GetBindingPath<T>(this T src, Expression<Func<T, object>> action)

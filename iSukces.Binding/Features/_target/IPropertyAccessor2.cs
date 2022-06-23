@@ -12,6 +12,6 @@ namespace iSukces.Binding
 
     public interface IPropertyUpdateSession : IDisposable
     {
-        void ForceUpdate();
+        void ForceUpdate(bool ignoreDisabledControls);
     }
 }

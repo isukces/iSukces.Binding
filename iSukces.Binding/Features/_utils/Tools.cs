@@ -1,18 +1,41 @@
 ﻿using System;
 using System.Reflection;
+using JetBrains.Annotations;
 
 namespace iSukces.Binding
 {
     public static class Tools
     {
-        public static ValueConversionStatus NeedsConversion(object value, Type t)
+        [CanBeNull]
+        public static Type GetNullable(Type type)
         {
-            if (value is BindingSpecial || t is null)
+            if (type is null)
+                return null;
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+                return type.GenericTypeArguments[0];
+            return null;
+        }
+
+        public static bool IsNullable(Type type)
+        {
+            if (type is null)
+                return false;
+            return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
+        }
+
+        public static ValueConversionStatus NeedsConversion(object value, Type type)
+        {
+            if (value is BindingSpecial || type is null)
                 return ValueConversionStatus.Special;
             if (value is null)
-                return t.IsClass || t.IsInterface ? ValueConversionStatus.Acceptable : ValueConversionStatus.NeedConversion;
+            {
+                if (IsNullable(type))
+                    return ValueConversionStatus.Acceptable;
+                return type.IsClass || type.IsInterface ? ValueConversionStatus.Acceptable : ValueConversionStatus.NeedConversion;
+            }
+
             var tt = value.GetType();
-            if (t.IsAssignableFrom(tt))
+            if (type.IsAssignableFrom(tt))
                 return ValueConversionStatus.Acceptable;
             return ValueConversionStatus.NeedConversion;
         }
@@ -28,7 +51,6 @@ namespace iSukces.Binding
             if (value is BindingSpecial)
                 return UpdateSourceResult.Special;
 
-
             var cat = NeedsConversion(value, pi.PropertyType);
             if (cat == ValueConversionStatus.Acceptable)
             {
@@ -43,7 +65,21 @@ namespace iSukces.Binding
                     return UpdateSourceResult.OkUnableToReadBack;
                 }
             }
+
             return UpdateSourceResult.InvalidValue;
+        }
+
+        public static bool IsEnabled(object o)
+        {
+            if (BindingBootstrap.IsEnabledPredicate is null)
+                return true;
+            return BindingBootstrap.IsEnabledPredicate(o);
+            
+        }
+
+        public static bool ShouldAssumeEmptyValue(bool ignoreDisabledControls, object target)
+        {
+            return !ignoreDisabledControls && !IsEnabled(target);
         }
     }
 
